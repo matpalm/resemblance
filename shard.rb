@@ -31,7 +31,7 @@ end
 #5826 Taburna Pty Ltd, 38 Oxley St, Bourke, NSW, 2840
 
 data = []
-ARGF.each do |line|
+STDIN.each do |line|
 	line =~ /^([0-9]*) (.*)/;
   id = $1.to_i
   name_addr = $2
@@ -39,7 +39,7 @@ ARGF.each do |line|
 end
 
 # process
-MIN_RESEMBLANCE = 0.6
+MIN_RESEMBLANCE = ARGV[0].to_f
 (0...data.size).each do |i|
 	((i+1)...data.size).each do |j|    
     resemblance = data[i][1].resemblance(data[j][1])

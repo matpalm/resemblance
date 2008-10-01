@@ -1,1 +1,8 @@
 see http://matpalm.com/dedupe (eventually)
+
+run with 
+> cat test.data | ruby shard.rb N
+
+0 <= N <= 1
+
+will output all resemblances with a resememblance > N
