@@ -39,11 +39,14 @@ STDIN.each do |line|
 end
 
 # process
+require 'yaml'
+results =  []
 MIN_RESEMBLANCE = ARGV[0].to_f
 (0...data.size).each do |i|
 	((i+1)...data.size).each do |j|    
     resemblance = data[i][1].resemblance(data[j][1])
-    puts [resemblance, data[i], data[j]].inspect if resemblance > MIN_RESEMBLANCE
+    results << [resemblance, data[i], data[j]] if resemblance > MIN_RESEMBLANCE
 	end
 end
 
+YAML.dump(results,File.open(ARGV[1]||'out.yaml',"w")) 

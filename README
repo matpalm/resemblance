@@ -1,8 +1,14 @@
 see http://matpalm.com/dedupe (eventually)
 
 run with 
-> cat test.data | ruby shard.rb N
+> cat test.data | ruby shard.rb N result.yaml
 
 0 <= N <= 1
 
 will output all resemblances with a resememblance > N
+
+see the results with
+> ./ycat.rb result.yaml
+
+run arbitrary reparsing with
+> ./reparse.rb result.yaml
