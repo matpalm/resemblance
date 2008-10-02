@@ -1,7 +1,7 @@
-see http://matpalm.com/dedupe (eventually)
+see http://matpalm.com/resemblance (eventually)
 
 run with 
-> cat test.data | ruby shard.rb N result.yaml
+> cat test.data | ruby shingle.rb N result.yaml
 
 0 <= N <= 1
 
