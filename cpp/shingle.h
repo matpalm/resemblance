@@ -18,6 +18,7 @@ class Shingle {
         ~Shingle();
         void build_bit_representation(const int max_bit);
         float resemblance_to(Shingle &other);
+        friend ostream &operator <<(ostream &os, const Shingle &obj);
 
     private:
         int numShingles;
@@ -31,7 +32,7 @@ class Shingle {
         int union_size(Shingle &other);
         int intersection_size(Shingle &other);
 
-        inline int count_number_bits_set(long l)  {
+        inline int count_number_bits_set(long l) {
             unsigned int c;
             for(c=0;l;c++)
                 l &= l-1;
