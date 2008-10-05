@@ -12,7 +12,8 @@ typedef map<string,int>::iterator word_idx_it;
 class WordIdx {
     public:
         WordIdx();
-        int idx_for_word(string word);
+        int idx_for_word(const string &word);
+        int max_idx();
     private:
         int sequence;
         word_idx_map word_idx;

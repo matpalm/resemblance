@@ -3,11 +3,11 @@
 #include <regex.h>
 #include <set>
 
-#include "shift.h"
 #include "shingle.h"
 #include "word_idx.h"
+#include "bit_utils.h"
 
-#include "test.h"
+//#include "test.h"
 
 using namespace std;
 
@@ -19,11 +19,17 @@ int main(int argc, char *argv[]) {
 
     // splitting into shingles
 
-    WordIdx wordIdx;
+    WordIdx word_idx;
 
-    string s = "abcdefdeghi";
-    Shingle b(wordIdx, s);
-    cout << s  << endl;
+    Shingle s1(word_idx, "abcdefdeghidifvuhdfivuhwejbrkjv");
+    Shingle s2(word_idx, "defdesdfghisyvuksdfkjxhfkxsbhdf");
+    cout << "max " << word_idx.max_idx() << endl;
+
+    s1.build_bit_representation(word_idx.max_idx());
+    s2.build_bit_representation(word_idx.max_idx());
+
+    cout << s1.resemblance_to(s2) << endl;
+    cout << s1.resemblance_to(s2) << endl;
 
     exit(1);
 
