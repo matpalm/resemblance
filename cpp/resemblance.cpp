@@ -1,12 +1,10 @@
 #include <iostream>
 #include <vector>
-#include <regex.h>
 #include <set>
 
 #include "shingle.h"
 #include "word_idx.h"
-
-//#include "test.h"
+#include "parser.h"
 
 using namespace std;
 
@@ -16,55 +14,33 @@ int main(int argc, char *argv[]) {
 
     //run_tests();
 
-    // splitting into shingles
-
+    // lookup from shingles to idx
     WordIdx word_idx;
 
-    vector<Shingle*> data;
-    typedef vector<Shingle*>::iterator s_iterator;
+    // list of shingles
+    vector<Shingle*> shingles;
 
-    // make a regex;
-    regex_t re;
-    regcomp(&re, "^[0-9]+", REG_EXTENDED);
-    // read in all lines from stdin
-    string nextLine;
-    regmatch_t matches[1];
-    int numMatches = 1;
-    while(std::getline(cin, nextLine)) {
-        // match line
-        if (regexec(&re, nextLine.c_str(), numMatches, matches, 0)) {
-            cerr << "expected each line to start with a number ?!?! [" << nextLine << "]" << endl;
-            exit(1);
-        }
-        // bit after number is data to compare
-        string nameAndAddr = nextLine.substr(matches[0].rm_eo+1);
-        data.push_back(new Shingle(word_idx, nameAndAddr));
-    }
-    regfree(&re);
+    // parse stdin
+    Parser parser;
+    parser.parse(shingles, word_idx);
 
     // build bit representation
-    for (s_iterator iter=data.begin(); iter!=data.end(); ++iter)
+    for (vector<Shingle*>::iterator iter=shingles.begin(); iter!=shingles.end(); ++iter)
         (*iter)->build_bit_representation(word_idx.max_idx());
 
     // convert from list back to array
-    const int number_lines = data.size();
-    Shingle **shingles = new Shingle*[number_lines];
+    const int number_lines = shingles.size();
+    Shingle **shingles_array = new Shingle*[number_lines];
     for (int i=0;i<number_lines;i++)
-        shingles[i] = data[i];
+        shingles_array[i] = shingles[i];
 
+    // compare each pair output high resemblances
     for(int i=0;i<number_lines;i++) {
         for (int j=i+1;j<number_lines;j++) {
-            float resemblance = shingles[i]->resemblance_to(*shingles[j]);
+            float resemblance = shingles_array[i]->resemblance_to(*shingles_array[j]);
             if (resemblance > min_resemblance)
                 cout << i << " " << j << " " << resemblance << endl;
         }
     }
-
-//
-//    for (s_iterator iter=data.begin(); iter!=data.end(); ++iter) {
-//        iter -> build_bit_representation(word_idx.max_idx());
-//        cout << *iter << endl;
-//    }
-
 
 }

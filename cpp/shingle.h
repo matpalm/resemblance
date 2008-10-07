@@ -6,7 +6,6 @@
 
 #include "word_idx.h"
 
-
 using namespace std;
 
 #define N_GRAM_LENGTH 2
