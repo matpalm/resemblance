@@ -1,6 +1,8 @@
 #include "shingle.h"
 #include "word_idx.h"
 
+#define N 32
+
 //#include "shift.h"
 
 Shingle::Shingle(WordIdx &wordIdx, const string line) :

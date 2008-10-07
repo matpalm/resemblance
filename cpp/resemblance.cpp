@@ -5,36 +5,20 @@
 
 #include "shingle.h"
 #include "word_idx.h"
-#include "bit_utils.h"
 
 //#include "test.h"
 
 using namespace std;
 
-// all lines of input
-
 int main(int argc, char *argv[]) {
+
+    const float min_resemblance = argc==1 ? 0 : atof(argv[1]);
 
     //run_tests();
 
     // splitting into shingles
 
     WordIdx word_idx;
-
-//    Shingle s1(word_idx, "abcdefdeghidifvuhdfivuhwejbrkjv");
-//    Shingle s2(word_idx, "defdesdfghisyvuksdfkjxhfkxsbhdf");
-//    Shingle s3(word_idx, "983749534");
-//    cout << "max " << word_idx.max_idx() << endl;
-//    s1.build_bit_representation(word_idx.max_idx());
-//    s2.build_bit_representation(word_idx.max_idx());
-//    s3.build_bit_representation(word_idx.max_idx());
-//    cout << s1.resemblance_to(s1) << endl; // 1
-//    cout << s2.resemblance_to(s2) << endl; // 1
-//    cout << s1.resemblance_to(s2) << endl; // mid
-//    cout << s2.resemblance_to(s1) << endl; // mid
-//    cout << s1.resemblance_to(s3) << endl; // 0
-//    cout << s2.resemblance_to(s3) << endl; // 0
-//    exit(0);
 
     vector<Shingle*> data;
     typedef vector<Shingle*>::iterator s_iterator;
@@ -70,7 +54,9 @@ int main(int argc, char *argv[]) {
 
     for(int i=0;i<number_lines;i++) {
         for (int j=i+1;j<number_lines;j++) {
-            cout << i << " " << j << " " << shingles[i]->resemblance_to(*shingles[j]) << endl;
+            float resemblance = shingles[i]->resemblance_to(*shingles[j]);
+            if (resemblance > min_resemblance)
+                cout << i << " " << j << " " << resemblance << endl;
         }
     }
 

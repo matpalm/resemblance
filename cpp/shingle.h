@@ -5,7 +5,7 @@
 #include <set>
 
 #include "word_idx.h"
-#include "bit_utils.h"
+
 
 using namespace std;
 

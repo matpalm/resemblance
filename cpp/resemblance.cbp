@@ -21,7 +21,11 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-O3" />
 					<Add option="-O2" />
+					<Add option="-O1" />
+					<Add option="-O" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -32,7 +36,13 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="main.cpp" />
+		<Unit filename="bit_utils.h" />
+		<Unit filename="resemblance.cbp" />
+		<Unit filename="resemblance.cpp" />
+		<Unit filename="shingle.cpp" />
+		<Unit filename="shingle.h" />
+		<Unit filename="word_idx.cpp" />
+		<Unit filename="word_idx.h" />
 		<Extensions>
 			<envvars />
 			<code_completion />
