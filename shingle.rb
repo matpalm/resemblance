@@ -8,23 +8,35 @@ class String
 		return @cached if @cached	
 		n_grams = Set.new
 		(length-N_GRAM_LEN+1).times do |i| 
-			n_grams << slice(i, N_GRAM_LEN) 
+            n_grams << slice(i, N_GRAM_LEN) 
 		end	
-    @cached = n_grams
+        @cached = n_grams
 		n_grams
 	end
 
-	def resemblance(b)
+	def jaccard_similarity_coeff(b)
 		sa = shingles
-    sb = b.shingles
+        sb = b.shingles
 		numerator = (sa.intersection sb).size
 		denominator = (sa.union sb).size	
 		numerator.to_f / denominator  
 	end
 
-  def invalidate_cache
-		@cached = nil
-  end
+    def jaccard_distance(b)        
+        xor = 0
+        union = 0
+        shingles.union(b.shingles).each do |shingle|
+            in_a = shingles.include? shingle
+            in_b = b.shingles.include? shingle
+            xor +=1 if in_a ^ in_b
+            union +=1 if in_a & in_b
+        end
+        xor.to_f / (xor+union)
+    end
+
+    def invalidate_cache
+        @cached = nil
+    end
 
 end
 
@@ -39,9 +51,9 @@ WINDOW_SIZE = 100 # following records
 
 data = []
 STDIN.each do |line|
-	line =~ /^([0-9]*) (.*)/;
-  id = $1.to_i
-  name_addr = $2
+    line =~ /^([0-9]*) (.*)/;
+    id = $1.to_i
+    name_addr = $2
 	data << [id, name_addr]
 end
 
@@ -50,14 +62,14 @@ require 'yaml'
 results =  []
 comparisons = 0
 (0...data.size).each do |i|
-  j_to = i + WINDOW_SIZE
-  j_to = data.size if j_to > data.size
-	((i+1)...j_to).each do |j| 
-		comparisons += 1
-    resemblance = data[i][1].resemblance(data[j][1])
-    results << [resemblance, data[i], data[j]] if resemblance > MIN_RESEMBLANCE
-	end  
-  data[i][1].invalidate_cache # need to free some memory!!
+    j_to = i + WINDOW_SIZE
+    j_to = data.size if j_to > data.size
+    ((i+1)...j_to).each do |j|
+        comparisons += 1
+        measure = data[i][1].jaccard_similarity_coeff(data[j][1])
+        results << [measure, data[i], data[j]] if measure > MIN_RESEMBLANCE
+    end
+    data[i][1].invalidate_cache # need to free some memory!!
 end
 puts "#comparisons #{comparisons}"
 
