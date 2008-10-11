@@ -6,18 +6,26 @@
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
-			<Target title="Debug">
-				<Option output="bin/Debug/resemblance" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj/Debug/" />
-				<Option type="1" />
-				<Option compiler="gcc" />
-				<Compiler>
-					<Add option="-g" />
-				</Compiler>
-			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/resemblance" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-O3" />
+					<Add option="-O2" />
+					<Add option="-O1" />
+					<Add option="-O" />
+					<Add option="-fopenmp" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+			<Target title="noopenmp">
+				<Option output="bin/noopenmp/resemblance" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/noopenmp/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -36,11 +44,17 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Linker>
+			<Add library="gomp" />
+		</Linker>
 		<Unit filename="bit_utils.h" />
+		<Unit filename="parser.cpp" />
+		<Unit filename="parser.h" />
 		<Unit filename="resemblance.cbp" />
 		<Unit filename="resemblance.cpp" />
 		<Unit filename="shingle.cpp" />
 		<Unit filename="shingle.h" />
+		<Unit filename="test.cpp" />
 		<Unit filename="word_idx.cpp" />
 		<Unit filename="word_idx.h" />
 		<Extensions>

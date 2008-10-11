@@ -1,4 +1,6 @@
 #include <iostream>
+#include <sstream>
+#include <fstream>
 #include <vector>
 #include <set>
 
@@ -6,7 +8,23 @@
 #include "word_idx.h"
 #include "parser.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 using namespace std;
+
+const int WINDOW_SIZE = 300;
+
+string output_filename_for_thread() {
+    stringstream str;
+    str << "resemblance";
+#ifdef _OPENMP
+    str << "." << omp_get_thread_num();
+#endif
+    str << ".out";
+    return str.str();
+}
 
 int main(int argc, char *argv[]) {
 
@@ -34,13 +52,26 @@ int main(int argc, char *argv[]) {
     for (int i=0;i<number_lines;i++)
         shingles_array[i] = shingles[i];
 
-    // compare each pair output high resemblances
-    for(int i=0;i<number_lines;i++) {
-        for (int j=i+1;j<number_lines;j++) {
-            float resemblance = shingles_array[i]->resemblance_to(*shingles_array[j]);
-            if (resemblance > min_resemblance)
-                cout << i << " " << j << " " << resemblance << endl;
-        }
-    }
+    #pragma omp parallel num_threads(4)
+    {
 
+        ofstream file(output_filename_for_thread().c_str());
+
+        for(int i=0;i<number_lines;i++) {
+
+            int window_start = i+1;
+            int window_finish = window_start + WINDOW_SIZE;
+            if (window_finish > number_lines) window_finish = number_lines;
+
+            // compare each pair output high resemblances
+            #pragma omp for
+            for (int j=window_start; j<window_finish; j++) {
+                float resemblance = shingles_array[i]->resemblance_to(*shingles_array[j]);
+                if (resemblance > min_resemblance)
+                    file << i << " " << j << " " << resemblance << endl;
+            }
+        }
+
+        file.close();
+    }
 }

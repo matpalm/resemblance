@@ -1,2 +1,2 @@
-an implementation using low level bit oeprations
-will document in project page when done...
+an implementation using low level bit operations
+compile with -fopenmp (gcc 4.2+) to make use of mulitcore/processor machine
