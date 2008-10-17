@@ -17,4 +17,4 @@ random notes on using the c++ version
 
 > time (head -n 100 full_dataset | cpp/bin/Release/resemblance 0 > compare.100)
 > cat compare.100 | ./histo.pl | sort -n > histo.100
-> plot.sh histo.100 histo.100.png
+> plot_histo.sh histo.100 histo.100.png

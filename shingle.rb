@@ -67,7 +67,8 @@ comparisons = 0
     ((i+1)...j_to).each do |j|
         comparisons += 1
         measure = data[i][1].jaccard_similarity_coeff(data[j][1])
-        results << [measure, data[i], data[j]] if measure > MIN_RESEMBLANCE
+        #measure = data[i][1].jaccard_distance(data[j][1])
+        puts "#{i} #{j} #{sprintf("%0.05f", measure)}" if measure > MIN_RESEMBLANCE
     end
     data[i][1].invalidate_cache # need to free some memory!!
 end
