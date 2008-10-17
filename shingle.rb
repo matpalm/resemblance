@@ -1,3 +1,4 @@
+#!/usr/bin/ruby
 require 'set'
 
 class String

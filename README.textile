@@ -1,6 +1,6 @@
-see http://matpalm.com/resemblance for more info
+see "matpalm.com/resemblance":http://matpalm.com/resemblance for more info
 
-h1. measuring
+h1. measuring resemblance (coeff)
 
 h2. ruby
 
@@ -12,16 +12,55 @@ run ruby version and output all with resemblance > 0.5
 h2. cpp
 
 run cpp version outputting resemblances above 0 (ie all of them)
-<pre>
-> cat test.data | cpp/bin/Release/resemblance 0
-</pre>
 
 outputs to N files generated from N cores so need to collate
+
 <pre>
+> cat test.data | cpp/bin/Release/resemblance 0
 > cat resemblance.*.out > result
 </pre>
 
 h1. munging 
 
-> cat compare.100 | ./histo.rb | sort -n > histo.100
-> plot_histo.sh histo.100 histo.100.png
+h2. generate a histogram of resemblance values
+
+<pre>
+> cat result | ./histo.rb | sort -n > histo.dat
+> plot_histo.sh histo.dat histo.100.png
+</pre>
+
+h1. measuring resemblance (distance)
+
+h2. ruby
+
+edit shingle.rb and swapped comment out line (ie wip!)
+
+<pre>
+> cat test.data | ruby shingle.rb 0.5 > distance.dat
+</pre>
+
+h2. cpp
+
+change the code, cause i havent yet (ie wip!)
+
+h2. converting from distances to points
+
+project distances into 2 dimensional space
+
+then check mean square error for projected distances versus original distances
+
+<pre>
+> cat distances.original | ./fastmap.rb 2 > points.2d
+> cat points.2d | ./convert_points_to_distances.rb > distances.projected.2d
+> ./mse.rb distances.original distances.projected.2d
+</pre>
+
+plot 2d and 3d data with gnuplot
+
+<pre>
+gnuplot> plot 'points.2d' with dots, 'points.2d' with labels
+gnuplot> splot 'points.3d' with dots, 'points.3d' with labels
+gnuplot> splot 'points.11d' with dots, 'points.11d' with labels # good luck with this one! ;)
+</pre>
+
+
