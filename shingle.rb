@@ -58,7 +58,6 @@ STDIN.each do |line|
 end
 
 # process
-require 'yaml'
 results =  []
 comparisons = 0
 (0...data.size).each do |i|
@@ -72,6 +71,3 @@ comparisons = 0
     end
     data[i][1].invalidate_cache # need to free some memory!!
 end
-puts "#comparisons #{comparisons}"
-
-YAML.dump(results,File.open(ARGV[1]||'out.yaml',"w")) 

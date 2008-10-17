@@ -1,3 +1,4 @@
+#!/usr/bin/ruby
 # output resemblance and average distance between idxes with that resemblance
 
 totals = {}

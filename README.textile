@@ -1,0 +1,27 @@
+see http://matpalm.com/resemblance for more info
+
+h1. measuring
+
+h2. ruby
+
+run ruby version and output all with resemblance > 0.5
+<pre>
+> cat test.data | ruby shingle.rb 0.5 > result
+</pre>
+
+h2. cpp
+
+run cpp version outputting resemblances above 0 (ie all of them)
+<pre>
+> cat test.data | cpp/bin/Release/resemblance 0
+</pre>
+
+outputs to N files generated from N cores so need to collate
+<pre>
+> cat resemblance.*.out > result
+</pre>
+
+h1. munging 
+
+> cat compare.100 | ./histo.rb | sort -n > histo.100
+> plot_histo.sh histo.100 histo.100.png
