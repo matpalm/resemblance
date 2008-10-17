@@ -36,7 +36,7 @@ h2. ruby
 edit shingle.rb and swapped comment out line (ie wip!)
 
 <pre>
-> cat test.data | ruby shingle.rb 0.5 > distance.dat
+> cat test.data | ruby shingle.rb 0.5 > distances.origina
 </pre>
 
 h2. cpp
@@ -48,6 +48,8 @@ h2. converting from distances to points
 project distances into 2 dimensional space
 
 then check mean square error for projected distances versus original distances
+
+(similiarly change 2 to whatever dimensionality)
 
 <pre>
 > cat distances.original | ./fastmap.rb 2 > points.2d
