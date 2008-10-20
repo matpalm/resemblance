@@ -9,12 +9,13 @@ def read_from file
     dists
 end
 
-dists1 = read_from ARGV[0]
-dists2 = read_from ARGV[1]
+dists1,dists2 = ARGV.map { |a| read_from a } 
 
 total = 0
+count = 0
 dists1.zip(dists2).each do |dist_pair|
     diff = dist_pair[0] - dist_pair[1]
     total += diff ** 2
+    count += 1
 end
-puts Math.sqrt(total)
+puts total / count
