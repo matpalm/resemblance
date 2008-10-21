@@ -2,12 +2,13 @@
 
 class Distances
 
-    def initialize size
+    def initialize
         @data = []
-        @size = size
+				@size = 1
     end
 
     def set_distance i,j,value
+	      @size += 1 if i==0
         @data[i] ||= []
         @data[i][j] = value
     end
@@ -66,10 +67,10 @@ class Distances
     end
 
     def distances_orthogonal_to x_projection
-        data_ = Distances.new SIZE
-        (0...SIZE).each do |i|
+        data_ = Distances.new
+        (0...@size).each do |i|
             xi = x_projection[i]
-            (i+1...SIZE).each do |j|
+            (i+1...@size).each do |j|
                 dist = distance i,j
                 xj = x_projection[j]
                 xixj = xi - xj
@@ -91,13 +92,14 @@ class Distances
     
 end
 
-SIZE = 5
+raise "fastmap.rb <DIMENSION>" unless ARGV.size==1
+
 NUM_DIMENSIONS = ARGV[0].to_i
 
 projections = []
 
 # parse initial distances from stdin
-data = Distances.new SIZE
+data = Distances.new
 STDIN.each do |line|
     i,j,distance = line.split
     data.set_distance i.to_i, j.to_i, distance.to_f
