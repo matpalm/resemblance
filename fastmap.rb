@@ -122,6 +122,6 @@ end
 dim = 0
 while(!projections.first.empty?) do
     projections.each { |projection| printf("%20.20f ",projection.shift) }
-    puts "\"#{dim}\""
+    puts "#{dim}"
     dim += 1
 end

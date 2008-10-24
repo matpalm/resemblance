@@ -41,8 +41,13 @@ class String
 
 end
 
-MIN_RESEMBLANCE = ARGV[0].to_f
+raise "shingle.rb [coeff|distance] <min_resemblance=0 for all>" unless ARGV.size==2
+TYPE = ARGV[0]
+raise "arg0 type can be coeff or distance" unless TYPE=='coeff' or TYPE=='distance'
+MIN_RESEMBLANCE = ARGV[1].to_f
 WINDOW_SIZE = 100 # following records
+
+MEASURE = TYPE=='coeff' ? 'jaccard_similarity_coeff' : 'jaccard_distance'
 
 # read in
 # two lines as file format example...
@@ -66,9 +71,8 @@ comparisons = 0
     j_to = data.size if j_to > data.size
     ((i+1)...j_to).each do |j|
         comparisons += 1
-        measure = data[i][1].jaccard_similarity_coeff(data[j][1])
-        #measure = data[i][1].jaccard_distance(data[j][1])
-        puts "#{i} #{j} #{sprintf("%0.05f", measure)}" if measure > MIN_RESEMBLANCE
+        measure = data[i][1].send(MEASURE, data[j][1])
+        puts "#{data[i][0]} #{data[j][0]} #{sprintf("%0.05f", measure)}" if measure > MIN_RESEMBLANCE
     end
     data[i][1].invalidate_cache # need to free some memory!!
 end
