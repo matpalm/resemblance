@@ -4,11 +4,11 @@ class Distances
 
     def initialize
         @data = []
-				@size = 1
+		@size = 1
     end
 
     def set_distance i,j,value
-	      @size += 1 if i==0
+	    @size += 1 if i==0
         @data[i] ||= []
         @data[i][j] = value
     end
@@ -32,12 +32,14 @@ class Distances
         furthest_pt
     end
 
+=begin
     def pick_end_points
         a = furthest_from 0 # pick furthest from artibtrary point
         b = furthest_from a # pick furthest from that point        
         [a, b] # done
     end
-
+=end
+    
     def projection_distances a, b
         result = []
 
@@ -72,6 +74,7 @@ class Distances
             xi = x_projection[i]
             (i+1...@size).each do |j|
                 dist = distance i,j
+                raise "i=#{i} j=#{j}" if dist==nil
                 xj = x_projection[j]
                 xixj = xi - xj
                 diff = dist**2 - xixj**2
@@ -99,15 +102,23 @@ NUM_DIMENSIONS = ARGV[0].to_i
 projections = []
 
 # parse initial distances from stdin
+# additional scan for biggest distance
 data = Distances.new
+largest_dist = -1
+largest_dist_pts = nil
 STDIN.each do |line|
-    i,j,distance = line.split
-    data.set_distance i.to_i, j.to_i, distance.to_f
+    i,j,distance = line.split    
+    i,j,distance = i.to_i, j.to_i, distance.to_f
+    if distance > largest_dist
+        largest_dist = distance
+        largest_dist_pts = [i,j]
+    end
+    data.set_distance i.to_i, j.to_i, distance
 end
 
 (NUM_DIMENSIONS).times do |dimension|
     # pick a line from two points that are far apart from each other
-    a,b = data.pick_end_points
+    a,b = largest_dist_pts
 
     # project all points onto this line 
     x_projection_distances = data.projection_distances(a,b)
