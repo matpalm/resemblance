@@ -1,3 +1,5 @@
+require 'set'
+
 class String
 
 	N_GRAM_LEN = 3

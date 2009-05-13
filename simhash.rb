@@ -1,68 +1,10 @@
 #!/usr/bin/env ruby
 
 require 'set'
-require 'shingling.rb'
 require 'read_data.rb'
 
 FINGERPRINT_SIZE = ARGV.size==0 ? 16 : ARGV[0].to_i
-HASH_RANGE = 2**FINGERPRINT_SIZE
-
-class Integer
-	def bit_set? idx
-		((self >> idx) & 1) == 1
-	end
-	def bits_differing_with other
-		bits = self ^ other
-		count = 0
-		while(bits!=0) do
-			bits &= bits-1
-			count += 1
-		end
-		count
-	end
-	def rotate
-		i = self
-		upperbit = i >> FINGERPRINT_SIZE-1 # get upper bit
-		i ^= (1 << FINGERPRINT_SIZE-1) if upperbit==1	# toggle upper bit if set
-		i <<= 1 # rotate left
-		i |= upperbit # append upper bit to lower end
-		i
-	end
-end
-
-class Set
-	def fingerprint
-		v = [0] * FINGERPRINT_SIZE
-		each do |feature|
-			hash = feature.hash % HASH_RANGE
-			#puts "feature=#{feature}, feature.hash=#{feature.hash}, %HASH_RANGE=#{hash}"
-			FINGERPRINT_SIZE.times do |idx|
-				bit_set = hash.bit_set? idx		
-				v[idx] += bit_set ? 1 : -1
-			end
-		end
-		fingerprint = 0
-		FINGERPRINT_SIZE.times do |idx|
-			fingerprint |= (1 << idx) if v[idx] > 0
-		end
-		fingerprint
-	end
-end
-
-class Fingerprint
-	attr_reader :id, :text, :fp
-	def initialize id,text
-		@id = id
-		@text = text
-		@fp = text.shingles.fingerprint
-	end
-	def rotate
-		@fp = @fp.rotate
-	end
-	def print
-		printf "%03i %0#{FINGERPRINT_SIZE}b %s\n",@id,@fp,@text
-	end
-end
+require 'fingerprinting.rb'
 
 data = read_data
 

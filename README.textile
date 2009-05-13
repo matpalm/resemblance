@@ -1,4 +1,5 @@
-see "matpalm.com/resemblance":http://matpalm.com/resemblance for more info
+see "matpalm.com/resemblance":http://matpalm.com/resemblance for a proper walkthrough
+instructions here are more for replicating the results on the above project page
 
 h1. measuring resemblance (coeff)
 
@@ -21,6 +22,14 @@ outputs to N files generated from N cores so need to collate
 </pre>
 
 h1. munging 
+
+h2. examine a result file
+
+ie see phrases used for comparison rather than just raw result (eg 1 3 0.88)
+
+<pre>
+> cat result | ./examine_result.rb test.data
+</pre>
 
 h2. generate a histogram of resemblance values
 
@@ -63,4 +72,13 @@ gnuplot> splot 'points.3d' with dots, 'points.3d' with labels
 gnuplot> splot 'points.11d' with dots, 'points.11d' with labels # good luck with this one! ;)
 </pre>
 
+h1. simhash heuristic
+
+compare simhash to brute force n^2 compare all (considering only values above resemblance 0.5)
+
+<pre>
+> cat test.data | ./shingle.rb coeff 0.5 | sort -n -k3 | tac > shingling.result
+> cat test.data | ./simhash.rb | sort -n -k3 | tac > simhash.result
+> ./compare.rb 0.5 shingle.result simhash.result
+</pre>
 

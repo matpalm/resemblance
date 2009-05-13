@@ -11,7 +11,7 @@ WINDOW_SIZE = 100 # following records
 
 MEASURE = TYPE=='coeff' ? 'jaccard_similarity_coeff' : 'jaccard_distance'
 
-data = read_data
+data = read_data.to_a.sort_by {|d| d[0]}
 
 # process
 results =  []
