@@ -1,7 +1,7 @@
 require 'shingling.rb'
 
-FINGERPRINT_SIZE ||= 32
-HASH_RANGE = 2**FINGERPRINT_SIZE
+SIMHASH_SIZE ||= 32
+HASH_RANGE = 2**SIMHASH_SIZE
 
 class Integer
 	def bit_set? idx
@@ -18,8 +18,8 @@ class Integer
 	end
 	def rotate
 		i = self
-		upperbit = i >> FINGERPRINT_SIZE-1 
-		i &= ~(1 << FINGERPRINT_SIZE-1) # unset upper bit
+		upperbit = i >> SIMHASH_SIZE-1 
+		i &= ~(1 << SIMHASH_SIZE-1) # unset upper bit
 		i <<= 1 # rotate left
 		i |= upperbit # append upper bit to lower end
 		i
@@ -27,36 +27,36 @@ class Integer
 end
 
 class Set
-	def fingerprint
-		v = [0] * FINGERPRINT_SIZE
+	def simhash
+		v = [0] * SIMHASH_SIZE
 		each do |feature|
 			hash = feature.hash % HASH_RANGE
 			#puts "feature=#{feature}, feature.hash=#{feature.hash}, %HASH_RANGE=#{hash}"
-			FINGERPRINT_SIZE.times do |idx|
+			SIMHASH_SIZE.times do |idx|
 				bit_set = hash.bit_set? idx		
 				v[idx] += bit_set ? 1 : -1
 			end
 		end
-		fingerprint = 0
-		FINGERPRINT_SIZE.times do |idx|
-			fingerprint |= (1 << idx) if v[idx] > 0
+		simhash = 0
+		SIMHASH_SIZE.times do |idx|
+			simhash |= (1 << idx) if v[idx] > 0
 		end
-		fingerprint
+		simhash
 	end
 end
 
-class Fingerprint
-	attr_reader :id, :text, :fp
+class SimHash
+	attr_reader :id, :text, :simhash
 	def initialize id,text
 		@id = id
 		@text = text
-		@fp = text.shingles.fingerprint
+		@simhash = text.shingles.simhash
 	end
 	def rotate
-		@fp = @fp.rotate
+		@simhash = @simhash.rotate
 	end
 	def print
-		printf "%03i %0#{FINGERPRINT_SIZE}b %i %s\n",@id,@fp,@fp,@text
+		printf "%03i %0#{SIMHASH_SIZE}b %i %s\n",@id,@simhash,@simhash,@text
 	end
 end
 

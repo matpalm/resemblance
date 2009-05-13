@@ -3,52 +3,52 @@
 require 'set'
 require 'read_data.rb'
 
-FINGERPRINT_SIZE = ARGV.size==0 ? 16 : ARGV[0].to_i
-require 'fingerprinting.rb'
+SIMHASH_SIZE = ARGV.size==0 ? 16 : ARGV[0].to_i
+require 'simhashing.rb'
 
 data = read_data
 
-fps_by_id = {}
-fps = []
+simhashs_by_id = {}
+simhashs = []
 data.each do |item|
 	index, phrase = item
-	fp = Fingerprint.new(index, phrase.chomp)
-	fps_by_id[index] = fp
-	fps << fp
+	simhash = SimHash.new(index, phrase.chomp)
+	simhashs_by_id[index] = simhash
+	simhashs << simhash
 end
 
 #puts "unsorted"
-#fps.each { |fp| fp.print }
+#simhashs.each { |simhash| simhash.print }
 
 candidates = Set.new
-FINGERPRINT_SIZE.times do |i|
+SIMHASH_SIZE.times do |i|
 	#puts "sorted #{i}"
-	fps = fps.sort_by { |v| v.fp }
-	#fps.each { |f| f.print }
+	simhashs = simhashs.sort_by { |sh| sh.simhash }
+	#simhashs.each { |h| h.print }
 
-	last_fp = nil
-	fps.each do |fp|
-		if last_fp
-			c1,c2 = fp.id, last_fp.id
+	last_sh = nil
+	simhashs.each do |sh|
+		if last_sh
+			c1,c2 = sh.id, last_sh.id
 			c1,c2 = c2,c1 if c1 > c2
 			candidate = [c1,c2]
 			candidates << candidate
 		end
-#		fp.print
-		last_fp = fp
+#		simhash.print
+		last_sh = sh
 	end
 
 	# rotate each, except last time
-	if i!=FINGERPRINT_SIZE-1
-		fps.each { |fp| fp.rotate }
+	if i!=SIMHASH_SIZE-1
+		simhashs.each { |sh| sh.rotate }
 	end
 end
 
 candidates = candidates.to_a
 candidates = candidates.sort_by {|c| c[1] }.reverse
 candidates.each do |c|
-	phrase1 = fps_by_id[c[0]].text
-	phrase2 = fps_by_id[c[1]].text
+	phrase1 = simhashs_by_id[c[0]].text
+	phrase2 = simhashs_by_id[c[1]].text
 	coeff = phrase1.jaccard_similarity_coeff phrase2
 	printf "%i %i %0.05f\n", c[0], c[1], coeff
 end
