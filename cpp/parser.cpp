@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "parser.h"
 #include <regex.h>
 
@@ -15,9 +16,11 @@ void Parser::parse(vector<Shingle*> &shingles, WordIdx &word_idx) {
             cerr << "expected each line to start with a number ?!?! [" << nextLine << "]" << endl;
             exit(1);
         }
+        // first bit is id
+        string idStr = nextLine.substr(0,matches[0].rm_eo);
         // bit after number is data to compare
         string nameAndAddr = nextLine.substr(matches[0].rm_eo+1);
-        shingles.push_back(new Shingle(word_idx, nameAndAddr));
+        shingles.push_back(new Shingle(word_idx, idStr, nameAndAddr));
     }
     regfree(&re);
 }

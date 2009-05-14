@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "shingle.h"
 #include "word_idx.h"
 
@@ -5,8 +6,8 @@
 
 //#include "shift.h"
 
-Shingle::Shingle(WordIdx &wordIdx, const string line) :
-    line(line), bit_representation(0), bit_representation_length(0) {
+Shingle::Shingle(WordIdx &wordIdx, const string id, const string line) :
+    line(line), id(id), bit_representation(0), bit_representation_length(0) {
 
     // get ngram shingles and store indexes from word idx
     for(uint i=0; i<line.length()-N_GRAM_LENGTH+1; i++) {
@@ -32,6 +33,10 @@ ostream &operator <<(ostream &os, const Shingle &obj) {
         os << obj.bit_representation[i] << " ";
     }
     return os;
+}
+
+string Shingle::getId() {
+    return id;
 }
 
 void Shingle::build_bit_representation(const int max_bit) {

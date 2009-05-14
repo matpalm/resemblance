@@ -13,16 +13,18 @@ using namespace std;
 class Shingle {
 
     public:
-        Shingle(WordIdx &wordIdx, const string line);
+        Shingle(WordIdx &wordIdx, const string id, const string line);
         ~Shingle();
         void build_bit_representation(const int max_bit);
         float resemblance_to(Shingle &other);
         friend ostream &operator <<(ostream &os, const Shingle &obj);
+        string getId();
 
     private:
         int numShingles;
         string line;
         set<int> shingles;
+        string id;
 
         long *bit_representation;
         int bit_representation_length;

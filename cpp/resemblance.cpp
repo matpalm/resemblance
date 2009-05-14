@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -68,7 +69,9 @@ int main(int argc, char *argv[]) {
             for (int j=window_start; j<window_finish; j++) {
                 float resemblance = shingles_array[i]->resemblance_to(*shingles_array[j]);
                 if (resemblance > min_resemblance)
-                    file << i << " " << j << " " << resemblance << endl;
+                    file << shingles_array[i]->getId() << " "
+                        << shingles_array[j]->getId() << " "
+                        << resemblance << endl;
             }
         }
 
