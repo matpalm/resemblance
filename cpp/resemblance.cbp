@@ -54,7 +54,6 @@
 		<Unit filename="resemblance.cpp" />
 		<Unit filename="shingle.cpp" />
 		<Unit filename="shingle.h" />
-		<Unit filename="test.cpp" />
 		<Unit filename="word_idx.cpp" />
 		<Unit filename="word_idx.h" />
 		<Extensions>

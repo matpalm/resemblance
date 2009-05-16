@@ -22,8 +22,9 @@ comparisons = 0
 	((i+1)...j_to).each do |j|
 		comparisons += 1
 		measure = data[i][1].send(MEASURE, data[j][1])
-		printf "%i %i %0.05f\n", data[i][0], data[j][0], measure if measure > MIN_RESEMBLANCE
+		printf "%i %i %0.05f\n", data[i][0], data[j][0], measure if measure >= MIN_RESEMBLANCE
 	end
 	data[i][1].invalidate_cache # need to free some memory!!
 end
+#STDERR.puts "comparisons=#{comparisons}"
 

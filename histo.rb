@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 # output resemblance and average distance between idxes with that resemblance
-
+# cat result | ./histo.rb > out
+# where out is lines of form similarity_bucket bucket_average count
 totals = {}
 totals.default = 0
 
@@ -35,6 +36,6 @@ def gnuplot_out hash, counts
     hash.keys.sort.each { |k| puts "#{k} #{hash[k]} #{counts[k]}" }    
 end
 
-#gnuplot_out totals, counts
+# similarty_bucket 
 gnuplot_out averages, counts
 

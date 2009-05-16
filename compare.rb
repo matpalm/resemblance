@@ -15,12 +15,10 @@ File.open(SHINGLING_OUT_FILE).each do |line|
 	top_from_shingling << [a,b]	
 end
 
-total = hits = 0
+hits = 0
 File.open(SIMHASH_OUT_FILE).each do |line|
-	total += 1
 	a,b,coeff = line.chomp.split
 	hits += 1 if top_from_shingling.include? [a,b]
-	break if total == top_from_shingling.size
 end
 
-puts "simhash got #{hits} out of a possible #{total} (#{hits.to_f/total*100}%) values above #{RESEMBLANCE_CUTOFF}" 
+printf "simhash got %i out of a possible %i (%i%%) values above %s\n", hits, top_from_shingling.size, (hits.to_f/top_from_shingling.size*100), RESEMBLANCE_CUTOFF

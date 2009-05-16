@@ -62,13 +62,14 @@ int main(int argc, char *argv[]) {
         for(int i=0;i<number_lines;i++) {
 
             int window_start = i+1;
-            int window_finish = window_start + WINDOW_SIZE;
+            int window_finish = number_lines;//window_start + WINDOW_SIZE;
             if (window_finish > number_lines) window_finish = number_lines;
 
             // compare each pair output high resemblances
             for (int j=window_start; j<window_finish; j++) {
                 float resemblance = shingles_array[i]->resemblance_to(*shingles_array[j]);
-                if (resemblance > min_resemblance)
+                // wtf? without -0.0001 entries that are 0.6 don't appear, if with >=
+                if (resemblance >= min_resemblance - 0.0001)
                     file << shingles_array[i]->getId() << " "
                         << shingles_array[j]->getId() << " "
                         << resemblance << endl;

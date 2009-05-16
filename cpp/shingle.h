@@ -8,7 +8,7 @@
 
 using namespace std;
 
-#define N_GRAM_LENGTH 2
+#define N_GRAM_LENGTH 3
 
 class Shingle {
 
