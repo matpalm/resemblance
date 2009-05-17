@@ -2,7 +2,7 @@
 # compare simhash and shingle algorithms by taking top N from shingling and seeing
 # how many the simhash algo got right
 
-raise "check args" unless ARGV.length==0 or ARGV.length==3
+raise "check args" unless ARGV.length==3
 RESEMBLANCE_CUTOFF = ARGV[0].to_f || 0
 SHINGLING_OUT_FILE = ARGV[1] || 'shingling.result'
 SIMHASH_OUT_FILE = ARGV[2] || 'simhash.result'
