@@ -47,9 +47,11 @@ end
 
 class SimHash
 	attr_reader :id, :text, :simhash
-	def initialize id,text,hash_fn
+	def initialize id,text
 		@id = id
 		@text = text
+	end
+	def apply_hash_fn hash_fn
 		@simhash = text.shingles.simhash hash_fn
 	end
 	def rotate

@@ -3,9 +3,9 @@
 # how many the simhash algo got right
 
 raise "check args" unless ARGV.length==3
-RESEMBLANCE_CUTOFF = ARGV[0].to_f || 0
-SHINGLING_OUT_FILE = ARGV[1] || 'shingling.result'
-SIMHASH_OUT_FILE = ARGV[2] || 'simhash.result'
+SHINGLING_OUT_FILE = ARGV[0] || 'shingling.result'
+SIMHASH_OUT_FILE = ARGV[1] || 'simhash.result'
+RESEMBLANCE_CUTOFF = ARGV[2].to_f || 0
 
 require 'set'
 top_from_shingling = Set.new
