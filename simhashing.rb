@@ -1,7 +1,7 @@
 require 'shingling.rb'
 
-SIMHASH_SIZE ||= 32
-HASH_RANGE = 2**SIMHASH_SIZE
+HASH_SIZE ||= 32
+HASH_RANGE = 2**HASH_SIZE
 
 class Integer
 	def bit_set? idx
@@ -18,8 +18,8 @@ class Integer
 	end
 	def rotate
 		i = self
-		upperbit = i >> SIMHASH_SIZE-1 
-		i &= ~(1 << SIMHASH_SIZE-1) # unset upper bit
+		upperbit = i >> HASH_SIZE-1 
+		i &= ~(1 << HASH_SIZE-1) # unset upper bit
 		i <<= 1 # rotate left
 		i |= upperbit # append upper bit to lower end
 		i
@@ -27,18 +27,18 @@ class Integer
 end
 
 class Set
-	def simhash
-		v = [0] * SIMHASH_SIZE
+	def simhash hash_fn
+		v = [0] * HASH_SIZE
 		each do |feature|
-			hash = feature.hash % HASH_RANGE
+			hash = hash_fn.hash(feature) % HASH_RANGE
 			#puts "feature=#{feature}, feature.hash=#{feature.hash}, %HASH_RANGE=#{hash}"
-			SIMHASH_SIZE.times do |idx|
+			HASH_SIZE.times do |idx|
 				bit_set = hash.bit_set? idx		
 				v[idx] += bit_set ? 1 : -1
 			end
 		end
 		simhash = 0
-		SIMHASH_SIZE.times do |idx|
+		HASH_SIZE.times do |idx|
 			simhash |= (1 << idx) if v[idx] > 0
 		end
 		simhash
@@ -47,16 +47,16 @@ end
 
 class SimHash
 	attr_reader :id, :text, :simhash
-	def initialize id,text
+	def initialize id,text,hash_fn
 		@id = id
 		@text = text
-		@simhash = text.shingles.simhash
+		@simhash = text.shingles.simhash hash_fn
 	end
 	def rotate
 		@simhash = @simhash.rotate
 	end
 	def print
-		printf "%03i %0#{SIMHASH_SIZE}b %i %s\n",@id,@simhash,@simhash,@text
+		printf "%03i %0#{HASH_SIZE}b %i %s\n",@id,@simhash,@simhash,@text
 	end
 end
 
