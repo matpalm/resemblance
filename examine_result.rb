@@ -2,14 +2,14 @@
 
 # collate a results file with the phrases the results represent
 #
-# eg stdin of the form
-#  1 2 0.4
-#  2 3 0.6 
-#
-# and a reference file of the form
+# eg stdin with reference info of the form
 #  1 ice
 #  2 cream
-#  3 van
+#  4 van
+#
+# and a results file
+#  1 2 0.4
+#  2 4 0.6 
 #
 # and output
 #  0.4
@@ -19,13 +19,12 @@
 #   cream
 #   van
 
-raise "usage: cat some_resemblance_measure.result | ./examine_result.rb phrases" unless ARGV.size == 1
+raise "usage: head -n 500 phrases | ./examine_result.rb some_resemblance_measure.result.500" unless ARGV.size == 1
 
 require 'read_data'
-RESULT_FILE = ARGV.first
-data = read_data File.open(RESULT_FILE)
+data = read_data STDIN
 
-STDIN.each do |line|
+File.open(ARGV.first).each do |line|
 	a,b,coeff = line.chomp.split
 	a,b = a.to_i, b.to_i
 	puts "#{coeff} (#{a},#{b})"
