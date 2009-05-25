@@ -74,7 +74,7 @@ gnuplot> splot 'points.11d' with dots, 'points.11d' with labels # good luck with
 
 h1. simhash heuristic
 
-compare simhash to brute force n^2 compare all (considering only values above resemblance 0.5)
+compare simhash to brute force n^2^ compare all (considering only values above resemblance 0.5)
 
 <pre>
 > cat test.data | ./shingle.rb coeff 0.5 | sort -nr -k3 > shingling.result
@@ -84,7 +84,7 @@ compare simhash to brute force n^2 compare all (considering only values above re
 
 h1. sketching heuristic
 
-compare sketching to brute force n^2 compare all (considering only values above resemblance 0.5)
+compare sketching to brute force n^2^ compare all (considering only values above resemblance 0.5)
 use 64bit hash, calculate 10 shingles and cutoff at MAX/2
 
 <pre>
