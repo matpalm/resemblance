@@ -24,11 +24,3 @@ class RandomPermutation
 
 end
 
-=begin
-N=30
-rp = RandomPermutation.new N
-30000.times do 
-	n = rand(N)
-	puts "#{n}\t#{rp.permutate(n)}\tX"
-end
-=end

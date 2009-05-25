@@ -28,7 +28,7 @@ h2. examine a result file
 ie see phrases used for comparison rather than just raw result (eg 1 3 0.88)
 
 <pre>
-> cat result | ./examine_result.rb test.data
+> cat test.data | ./examine_result.rb result
 </pre>
 
 h2. generate a histogram of resemblance values
@@ -77,8 +77,19 @@ h1. simhash heuristic
 compare simhash to brute force n^2 compare all (considering only values above resemblance 0.5)
 
 <pre>
-> cat test.data | ./shingle.rb coeff 0.5 | sort -n -k3 | tac > shingling.result
-> cat test.data | ./simhash.rb | sort -n -k3 | tac > simhash.result
+> cat test.data | ./shingle.rb coeff 0.5 | sort -nr -k3 > shingling.result
+> cat test.data | ./simhash.rb | sort -nr -k3 > simhash.result
+> ./compare.rb 0.5 shingle.result simhash.result
+</pre>
+
+h1. sketching heuristic
+
+compare sketching to brute force n^2 compare all (considering only values above resemblance 0.5)
+use 64bit hash, calculate 10 shingles and cutoff at MAX/2
+
+<pre>
+> cat test.data | ./shingle.rb coeff 0.5 | sort -nr -k3 > shingling.result
+> cat test.data | ./sketch.rb 64 10 2 | sort -nr -k3 > sketch.result
 > ./compare.rb 0.5 shingle.result simhash.result
 </pre>
 
