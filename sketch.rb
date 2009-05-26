@@ -1,10 +1,10 @@
-p#!/usr/bin/env ruby
+#!/usr/bin/env ruby
 
 raise "usage: sketch.rb HASH_SIZE SKETCH_SIZE CUTOFF_RATIO" unless ARGV.length == 3
 
 HASH_SIZE = ARGV[0].to_i
-SKETCH_SIZE ||= ARGV[1].to_i
-CUTOFF_RATIO ||= ARGV[2].to_i
+SKETCH_SIZE = ARGV[1].to_i
+CUTOFF_RATIO = ARGV[2].to_i
 
 require 'read_data'
 require 'set'
@@ -102,6 +102,7 @@ shingles_in_common_list.each do |ids_count|
 	a,b,count = ids_count
 
 	id1,id2 = document_ids[a], document_ids[b]
+	id1,id2 = id2,id1 if id1 > id2
 	d1,d2 = documents[id1], documents[id2]
 	coeff = d1.jaccard_similarity_coeff(d2)
 
