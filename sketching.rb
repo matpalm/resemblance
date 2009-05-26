@@ -2,6 +2,7 @@ require 'universal_hash'
 require 'random_permutation'
 
 class Sketch
+	attr_reader :sketch
 
 	def initialize elems
 		@elems = elems
@@ -14,11 +15,7 @@ class Sketch
 
 	def apply_permutation permutation
 		@hashes = @hashes.collect { |h| permutation.permutate h }
-		sketch << @hashes.min
-	end
-
-	def sketch
-		@sketch
+		@sketch << @hashes.min
 	end
 
 end
