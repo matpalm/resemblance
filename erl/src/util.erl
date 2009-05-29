@@ -34,9 +34,6 @@ tostr() ->
 
 tostrloop() ->
     receive
-	stop ->
-	    io:format("~w stopping\n",[self()]),
-	    exit(0);
 	M ->
 	    io:format("~w tostr ~p\n",[self(),M])
     after 15000 ->

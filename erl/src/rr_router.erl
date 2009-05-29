@@ -8,10 +8,6 @@ start(Targets) ->
 loop(Targets) ->
 %    d(">loop across ~w\n",[Targets]),
     receive
-	stop ->
-%	    d("rr stop\n"),
-	    [ Target ! stop || Target <- Targets ],
-	    exit(0);
 	Msg ->
 %	    d("forwarding ~w\n",[Msg]),
 	    [ Target ! Msg || Target <- Targets ]

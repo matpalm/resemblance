@@ -11,14 +11,8 @@ init(Receiver) ->
 
 loop(Store) ->
     receive
-	stop -> 
-	    d("stopping"),
-	    d("final store ~p\n",[dict:to_list(Store)]),
-	    get(receiver) ! stop,
-	    exit(0);
-	
 	{Id, {sketch,Sketch}} ->
-	    d("storing Id ~w Ske ~w\n",[Id,Sketch]),
+%	    d("storing Id ~w Ske ~w\n",[Id,Sketch]),
 	    loop(add_to_store(Id,Sketch,Store))
     
     after 15000 ->
@@ -34,9 +28,8 @@ add_to_store(Id,Sketch,Store) ->
 		true -> % already an element, ignore
 		    Store;
 		_ ->
-		    Set2 = ordsets:add_element(Id,Set),
-		    emit_combos(Set2),
-		    dict:store(Sketch,Set2,Store)
+		    emit_new_combos(Id,Set),
+		    dict:store(Sketch,ordsets:add_element(Id,Set),Store)
 	    end;
 	_ ->
 	    dict:store(Sketch,
@@ -44,5 +37,13 @@ add_to_store(Id,Sketch,Store) ->
 		       Store)
     end.
 
-emit_combos(S) ->
-    get(receiver) ! { combos_for, S}.
+emit_new_combos(Id1,Set) ->
+    lists:foreach(
+      fun(Id2) -> emit_new_combo(Id1,Id2) end,
+      Set
+      ).
+
+emit_new_combo(Id1,Id2) when Id1 > Id2 ->
+    emit_new_combo(Id2,Id1);
+emit_new_combo(Id1,Id2) ->
+    get(receiver) ! { sketch_in_common, Id1, Id2}.

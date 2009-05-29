@@ -13,12 +13,9 @@ loop(Seed, Receiver) ->
 	{Id, {shingles,Shingles}} ->
 	    Hashes = [ util:uhash(S,Seed) || S <- Shingles ],
 	    Sketch = lists:min(Hashes),
-	    d("Id ~p => Hashes ~w Sketch ~p\n",[Id,Hashes,Sketch]),
+%	    d("Id ~p => Hashes ~w Sketch ~p\n",[Id,Hashes,Sketch]),
 	    Receiver ! {Id, {sketch,Sketch}};
-	stop ->
-	    Receiver ! stop,
-%	    d("stopping\n"),
-	    exit(0);
+
 	M ->
 	    d("sketcher unexpected ~p\n",[M])
     after 15000 ->
