@@ -1,7 +1,7 @@
 see "matpalm.com/resemblance":http://matpalm.com/resemblance for a proper walkthrough
 instructions here are more for replicating the results on the above project page
 
-h1. measuring resemblance (coeff)
+h1. measuring exact resemblance (jaccard coeff against shingles)
 
 h2. ruby
 
