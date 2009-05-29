@@ -39,11 +39,7 @@ add_to_store(Id,Sketch,Store) ->
 
 emit_new_combos(Id1,Set) ->
     lists:foreach(
-      fun(Id2) -> emit_new_combo(Id1,Id2) end,
+      fun(Id2) -> get(receiver) ! { sketch_in_common, Id1, Id2} end,
       Set
       ).
 
-emit_new_combo(Id1,Id2) when Id1 > Id2 ->
-    emit_new_combo(Id2,Id1);
-emit_new_combo(Id1,Id2) ->
-    get(receiver) ! { sketch_in_common, Id1, Id2}.

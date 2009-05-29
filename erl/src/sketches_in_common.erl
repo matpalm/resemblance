@@ -20,10 +20,7 @@ loop(Freq) ->
 	    d("timeout\n")
     end.
 
-ensure_first_less_than(A,B) when A > B ->
-    ensure_first_less_than(B,A);
-
-ensure_first_less_than(A,B) ->
-    { A,B }.
+ensure_first_less_than(A,B) when A > B -> { B,A };
+ensure_first_less_than(A,B) -> { A,B }.
     
 
