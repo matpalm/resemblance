@@ -7,7 +7,7 @@ h2. ruby
 
 run ruby version and output all with resemblance > 0.5
 <pre>
-> cat test.data | ./shingle.rb coeff 0.5 > result
+> cat test.data | ./ruby/shingle.rb coeff 0.5 > result
 </pre>
 
 h2. cpp
@@ -43,7 +43,7 @@ h1. measuring resemblance (distance)
 h2. ruby
 
 <pre>
-> cat test.data | ruby shingle.rb distance 0 > distances.original
+> cat test.data | ./ruby/shingle.rb distance 0 > distances.original
 </pre>
 
 h2. cpp
@@ -77,8 +77,8 @@ h1. simhash heuristic
 compare simhash to brute force order n squared compare all (considering only values above resemblance 0.5)
 
 <pre>
-> cat test.data | ./shingle.rb coeff 0.5 | sort -nr -k3 > shingling.result
-> cat test.data | ./simhash.rb | sort -nr -k3 > simhash.result
+> cat test.data | ./ruby/shingle.rb coeff 0.5 | sort -nr -k3 > shingling.result
+> cat test.data | ./ruby/simhash.rb | sort -nr -k3 > simhash.result
 > ./compare.rb 0.5 shingle.result simhash.result
 </pre>
 
@@ -88,8 +88,8 @@ compare sketching to brute force order n squared compare all (considering only v
 use 64bit hash, calculate 10 shingles and cutoff at MAX/2
 
 <pre>
-> cat test.data | ./shingle.rb coeff 0.5 | sort -nr -k3 > shingling.result
-> cat test.data | ./sketch.rb 64 10 2 | sort -nr -k3 > sketch.result
+> cat test.data | ./ruby/shingle.rb coeff 0.5 | sort -nr -k3 > shingling.result
+> cat test.data | ./ruby/sketch.rb 64 10 2 | sort -nr -k3 > sketch.result
 > ./compare.rb 0.5 shingle.result simhash.result
 </pre>
 
