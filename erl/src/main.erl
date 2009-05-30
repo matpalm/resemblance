@@ -6,22 +6,22 @@
 main() ->
     spawn(etop,start,[]),
     start(),
-    {ok,B} = file:read_file("test"),
+    {ok,B} = file:read_file("test.data"),
     Lines = string:tokens(binary_to_list(B),"\n"),
 %    process(["the cat sat","on the mat","in the tree","cat tree mat"],0).
-    process(Lines,1).
+    process(Lines).
 
-
-process([],_) ->
+process([]) ->
     dump();
 
-process([Str|T],Id) ->
-    d("processing ~p ~p\n",[Id,Str]),
-    Shingles = util:shingles(Str),
+process([Str|T]) ->
+    { Id, Data } = parse:line(Str),
+    d("processing ~p ~p\n",[Id,Data]),
+    Shingles = util:shingles(Data),
 %    d("id ~p shingles ~p\n",[Id,Shingles]),
     get(sketch_broadcast_router) ! { Id, {shingles,Shingles} },
 %    timer:sleep(1),
-    process(T,Id+1).
+    process(T).
 
 dump() ->
     timer:sleep(5000),
