@@ -4,6 +4,7 @@
 -include("debug.hrl").
 
 main() ->
+    spawn(etop,start,[]),
     start(),
     {ok,B} = file:read_file("test"),
     Lines = string:tokens(binary_to_list(B),"\n"),
@@ -18,22 +19,22 @@ process([Str|T],Id) ->
     d("processing ~p ~p\n",[Id,Str]),
     Shingles = util:shingles(Str),
 %    d("id ~p shingles ~p\n",[Id,Shingles]),
-    get(sketch_rr_router) ! { Id, {shingles,Shingles} },
+    get(sketch_broadcast_router) ! { Id, {shingles,Shingles} },
 %    timer:sleep(1),
     process(T,Id+1).
 
 dump() ->
-    timer:sleep(500),
+    timer:sleep(5000),
     get(sic) ! dump,
-    dump().
+    done.
  
 start() ->
     put(ts, util:tostr()),
     put(sic, sketches_in_common:start()),
     put(sti, sketch_to_id:start(get(sic))),
     put(sketchers, [ sketcher:start(get(sti)) || _ <- lists:seq(1, ?SKETCH_SIZE)]),
-    put(sketch_rr_router, rr_router:start(get(sketchers))).
+    put(sketch_broadcast_router, broadcast_router:start(get(sketchers))).
 
 %stop() ->
-%    get(sketch_rr_router) ! stop.
+%    get(sketch_broadcast_router) ! stop.
 	       

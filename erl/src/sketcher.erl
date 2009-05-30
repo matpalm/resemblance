@@ -17,9 +17,9 @@ loop(Seed, Receiver) ->
 	    Receiver ! {Id, {sketch,Sketch}};
 
 	M ->
-	    d("sketcher unexpected ~p\n",[M])
+	    d("unexpected ~p\n",[M])
     after 15000 ->
-	    d("sketcher timeout\n"),
+	    d("timeout\n"),
 	    exit(1)
     end,
     loop(Seed,Receiver).

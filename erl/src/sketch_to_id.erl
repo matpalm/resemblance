@@ -16,7 +16,7 @@ loop(Store) ->
 	    loop(add_to_store(Id,Sketch,Store))
     
     after 15000 ->
-	    io:format("sketch to id timeout\n"),
+	    d("timeout\n"),
 	    exit(1)
     end.
 

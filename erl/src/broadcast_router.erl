@@ -1,4 +1,4 @@
--module(rr_router).
+-module(broadcast_router).
 -compile(export_all).
 -include("debug.hrl").
 
