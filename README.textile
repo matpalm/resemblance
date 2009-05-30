@@ -21,6 +21,15 @@ outputs to N files generated from N cores so need to collate
 > cat resemblance.*.out > result
 </pre>
 
+h2. erlang
+
+run early days work-in-progress erlang version as 
+
+<pre>
+> cd erl && rake && cd ..
+> erl -pa erl/ebin -s main main
+</pre>
+
 h1. munging 
 
 h2. examine a result file
