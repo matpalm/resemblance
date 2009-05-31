@@ -21,7 +21,7 @@
 
 raise "usage: head -n 500 phrases | ./examine_result.rb some_resemblance_measure.result.500" unless ARGV.size == 1
 
-require 'read_data'
+require 'ruby/read_data'
 data = read_data STDIN
 
 File.open(ARGV.first).each do |line|

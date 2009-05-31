@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
-require 'shingling.rb'
 require 'set'
-require 'read_data.rb'
+require File.dirname(__FILE__)+'/shingling.rb'
+require File.dirname(__FILE__)+'/read_data.rb'
 
 raise "shingle.rb [coeff|distance] <min_resemblance=0 for all>" unless ARGV.size==2
 TYPE = ARGV[0]

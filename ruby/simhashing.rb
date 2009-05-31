@@ -1,4 +1,4 @@
-require 'shingling.rb'
+require File.dirname(__FILE__)+'/shingling'
 
 HASH_SIZE ||= 32
 HASH_RANGE = 2**HASH_SIZE

@@ -1,13 +1,14 @@
 #!/usr/bin/ruby
+HASH_SIZE=64
 require 'universal_hash'
-
-uh = UniversalHash.build #_with [3457568,53457568,353467588]
+uh = UniversalHash.build_with [3457568,53457568,353467588]
 
 require 'shingling.rb'
 freqs = [] # [ {'0' => 13, '1'=>12}, etc ]
 'i just found out the other day that The presets are an australian band'.shingles.each { |sh|
-	hash = sprintf "%064b\n", uh.hash(sh)
-	puts "hash #{hash}"
+	hash_value = uh.hash(sh)
+	hash = sprintf "%064b\n", hash_value
+	puts "\"#{sh}\" #{hash_value}"
 	hash.chomp.chars.each_with_index do |bit, idx|
 		bit = bit.to_i
 		freqs[idx] ||= {}
@@ -15,6 +16,7 @@ freqs = [] # [ {'0' => 13, '1'=>12}, etc ]
 		freqs[idx][bit] += 1
 	end
 }
+exit 0
 class Array
 	def sum 
 		inject(0){|a,n| n+a}

@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 
 require 'set'
-require 'read_data.rb'
-require 'util.rb'
+require File.dirname(__FILE__)+'/read_datab'
+require File.dirname(__FILE__)+'/util'
 
 WINDOW_SIZE = 10
 NUM_THREADS = 4

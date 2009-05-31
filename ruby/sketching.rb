@@ -1,5 +1,5 @@
-require 'universal_hash'
-require 'random_permutation'
+require File.dirname(__FILE__)+'/universal_hash'
+#require 'random_permutation'
 
 class Sketch
 	attr_reader :sketch

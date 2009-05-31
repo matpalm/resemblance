@@ -6,10 +6,10 @@ HASH_SIZE = ARGV[0].to_i
 SKETCH_SIZE = ARGV[1].to_i
 CUTOFF_RATIO = ARGV[2].to_i
 
-require 'read_data'
 require 'set'
-require 'sketching'
-require 'shingling'
+require File.dirname(__FILE__)+'/read_data'
+require File.dirname(__FILE__)+'/sketching'
+require File.dirname(__FILE__)+'/shingling'
 
 alias _puts puts
 def puts msg
