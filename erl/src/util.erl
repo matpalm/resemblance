@@ -1,5 +1,11 @@
 -module(util).
--compile(export_all).
+-export([
+	 shingles/1, shingles/2,
+	 uhash/2, uhash_seed/1,
+	 tostr/0, tostrloop/0,
+	 ack/1
+	]).
+	  
 -include("consts.hrl").
 
 shingles(Str) ->
@@ -42,3 +48,10 @@ tostrloop() ->
     end,
     tostrloop().
 
+ack(Pid) when is_atom(Pid) -> 
+    ack(get(Pid));
+ack(Pids) when is_list(Pids) -> 
+    [ ack(P) || P <- Pids];
+ack(Pid) ->
+    Pid ! { ack, self() },
+    receive { ack, Pid } -> ok end.    

@@ -86,11 +86,24 @@ def compare_sketch num_bits, sketch_size, cutoff
 	puts "---running sketch num_bits=#{num_bits} sketch_size=#{sketch_size} cutoff=#{cutoff}"
 	file = "sketch.result.#{N}.#{num_bits}b.#{sketch_size}s.#{cutoff}c"
 	run_unless_file_exists(file) do
-		time_call { run "#{head_command(N)} | ruby sketch.rb #{num_bits} #{sketch_size} #{cutoff} > #{file}" }
+		time_call { run "#{head_command(N)} | ruby ruby/sketch.rb #{num_bits} #{sketch_size} #{cutoff} > #{file}" }
 	end
 	puts "#lines= #{`wc -l #{file}`}"
 	puts run "./compare.rb shingle.result.#{N} #{file} #{MIN_RES}"
 end
 
-compare_sketch 64, 10, 2
+def compare_erl_sketch 
+	puts "---running erl sketch"
+	file = "sketch.result.erl.#{N}"
+	run_unless_file_exists(file) do	
+		run "head -n #{N} name_addr > test.data"
+		time_call { run "erl -noshell -pa erl/ebin -s main main  > #{file}" }
+	end
+	puts "#lines= #{`wc -l #{file}`}"
+	puts run "./compare.rb shingle.result.#{N} #{file} #{MIN_RES}"
+end
+
+
+#compare_sketch 64, 10, 2
+compare_erl_sketch
 

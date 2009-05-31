@@ -8,9 +8,14 @@ start(Targets) ->
 loop(Targets) ->
 %    d(">loop across ~w\n",[Targets]),
     receive
+	{ ack,Pid } ->
+	    Pid ! { ack,self() },
+	    loop(Targets);
+
 	Msg ->
 %	    d("forwarding ~w\n",[Msg]),
 	    [ Target ! Msg || Target <- Targets ]
+
     after 15000 ->
 	    d("timeout\n"),
 	    exit(1)

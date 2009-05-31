@@ -10,6 +10,10 @@ start(Receiver) ->
 loop(Seed, Receiver) ->
 %    d(">loop seed ~p\n",[Seed]),
     receive
+	{ack,Pid} ->
+	    Pid ! {ack,self()},
+	    loop(Seed, Receiver);
+
 	{Id, {shingles,Shingles}} ->
 	    Hashes = [ util:uhash(S,Seed) || S <- Shingles ],
 	    Sketch = lists:min(Hashes),
@@ -18,6 +22,7 @@ loop(Seed, Receiver) ->
 
 	M ->
 	    d("unexpected ~p\n",[M])
+
     after 15000 ->
 	    d("timeout\n"),
 	    exit(1)

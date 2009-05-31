@@ -11,10 +11,18 @@ init(Receiver) ->
 
 loop(Store) ->
     receive
+	{ack,Pid} ->
+	    Pid ! {ack,self()},
+	    loop(Store);
+
 	{Id, {sketch,Sketch}} ->
 %	    d("storing Id ~w Ske ~w\n",[Id,Sketch]),
-	    loop(add_to_store(Id,Sketch,Store))
+	    loop(add_to_store(Id,Sketch,Store));
     
+	M ->
+	    d("unexpected ~p\n",[M]),
+	    loop(Store)
+
     after 15000 ->
 	    d("timeout\n"),
 	    exit(1)
