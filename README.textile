@@ -21,15 +21,6 @@ outputs to N files generated from N cores so need to collate
 > cat resemblance.*.out > result
 </pre>
 
-h2. erlang
-
-run early days work-in-progress erlang version as 
-
-<pre>
-> cd erl && rake && cd ..
-> erl -pa erl/ebin -s main main
-</pre>
-
 h1. munging 
 
 h2. examine a result file
@@ -101,4 +92,13 @@ use 64bit hash, calculate 10 shingles and cutoff at MAX/2
 > cat test.data | ./ruby/sketch.rb 64 10 2 | sort -nr -k3 > sketch.result
 > ./compare.rb 0.5 shingle.result simhash.result
 </pre>
+
+h1. sketching in erlang
+
+<pre>
+> cd erl && rake
+> ln -s ../test.data . # todo: make path configurable
+> erl -noshell -pa erl/ebin -s main main > erl.result
+</pre>
+
 
