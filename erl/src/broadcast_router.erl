@@ -16,9 +16,6 @@ loop(Targets) ->
 %	    d("forwarding ~w\n",[Msg]),
 	    [ Target ! Msg || Target <- Targets ]
 
-    after 15000 ->
-	    d("timeout\n"),
-	    exit(1)
     end,
     loop(Targets).
 

@@ -10,6 +10,7 @@ init(Receiver) ->
     loop(dict:new()).
 
 loop(Store) ->
+%    d(">loop ~p\n",[process_info(self(),message_queue_len)]),
     receive
 	{ack,Pid} ->
 	    Pid ! {ack,self()},
@@ -23,9 +24,6 @@ loop(Store) ->
 	    d("unexpected ~p\n",[M]),
 	    loop(Store)
 
-    after 15000 ->
-	    d("timeout\n"),
-	    exit(1)
     end.
 
 add_to_store(Id,Sketch,Store) -> 

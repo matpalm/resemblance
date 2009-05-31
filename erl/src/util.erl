@@ -42,9 +42,6 @@ tostrloop() ->
     receive
 	M ->
 	    io:format("~w tostr ~p\n",[self(),M])
-    after 15000 ->
-	    io:format("~w tostrloop timeout\n",[self()]),
-	    exit(0)
     end,
     tostrloop().
 

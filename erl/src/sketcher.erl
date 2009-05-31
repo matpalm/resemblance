@@ -23,9 +23,6 @@ loop(Seed, Receiver) ->
 	M ->
 	    d("unexpected ~p\n",[M])
 
-    after 15000 ->
-	    d("timeout\n"),
-	    exit(1)
     end,
     loop(Seed,Receiver).
 

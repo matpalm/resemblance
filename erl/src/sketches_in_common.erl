@@ -7,7 +7,7 @@ start() ->
     spawn(?MODULE,loop,[dict:new()]).
 
 loop(Freq) ->
-    %d(">loop\n"),
+%    d(">loop ~p ~p\n",[process_info(self(),message_queue_len),dict:size(Freq)]),
     receive
 	{ack,Pid} ->
 	    Pid ! {ack,self()},
@@ -26,7 +26,6 @@ loop(Freq) ->
 	    loop(Freq);
 
 	{ sketch_in_common, Id1, Id2 } ->
-	    %d("sic ~p ~p\n",[Id1,Id2]),
 	    Key = ensure_first_less_than(Id1,Id2),
 	    Freq2 = dict:update_counter(Key, 1, Freq),
 	    loop(Freq2);
@@ -35,8 +34,6 @@ loop(Freq) ->
 	      d("unexpected msg ~p\n",[M]),
 	      loop(Freq)
     
-    after 15000 ->
-	    d("timeout\n")
     end.
 
 ensure_first_less_than(A,B) when A > B -> { B,A };
