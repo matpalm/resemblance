@@ -10,7 +10,7 @@ shingles(_S,N) when N < 1 ->
 shingles(S,N) when N > length(S) ->
     [];
 shingles(S,N) ->
-    [ string:substr(S,Offset,N) || Offset <- lists:seq(1,length(S)-N+1) ].
+    sets:to_list(sets:from_list([ string:substr(S,Offset,N) || Offset <- lists:seq(1,length(S)-N+1) ])).
 
 uhash(Str, A) ->
 %    io:format("processing ~p\n",[Str]),
@@ -41,6 +41,4 @@ tostrloop() ->
 	    exit(0)
     end,
     tostrloop().
-	    
-
 
