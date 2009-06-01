@@ -4,46 +4,65 @@
 -include("debug.hrl").
 
 main() ->
-    spawn(etop,start,[]),
-    start(),
-    process_file("test.data"),
+%    spawn(etop,start,[]),
+
+    wire_up_workers(),
+
+    parse:each_line(
+      "test.data",
+      fun(Line) -> process_a_line(Line) end
+      ),
+
     wait_for_sketches_in_common_to_complete(),
     start_candidate_calculation(),
     done.
 
-process_file(File) ->
-    {ok,B} = file:read_file(File),
-    Lines = string:tokens(binary_to_list(B),"\n"),
-    forward_all_lines(Lines).
-    
-forward_all_lines([]) ->
-    done;
-
-forward_all_lines([Str|T]) ->
-    { Id, Data } = parse:line(Str),
+process_a_line(Str) ->
+    { Id, Data } = parse:parse_line(Str),
     %d("processing ~p ~p\n",[Id,Data]),
     Shingles = util:shingles(Data),
     %d("id ~p shingles ~p\n",[Id,Shingles]),
-    get(sketch_broadcast_router) ! { Id, {shingles,Shingles} },
-    get(shingle_store) ! { Id, {shingles,Shingles} },
-%    timer:sleep(1),
-    forward_all_lines(T).
+    [ Sketcher ! {Id,{shingles,Shingles}} || Sketcher <- get(sketchers)],
+    get(shingle_store) ! { Id, {shingles,Shingles} }.
 
-start() ->
+wire_up_workers() ->
     put(shingle_store, shingle_store:start()),
-    put(sketches_in_common, sketches_in_common:start()),
-    put(sketch_to_id, sketch_to_id:start(get(sketches_in_common))),
-    put(sketchers, [ sketcher:start(get(sketch_to_id)) || _ <- lists:seq(1, ?SKETCH_SIZE)]),
-    put(sketch_broadcast_router, broadcast_router:start(get(sketchers))).
+    
+    SketchesInCommonPids = 
+	[ sketches_in_common:start() || _ <- lists:seq(1, ?NUM_SKETCH_IN_COMMONS) ],
+    put(sketches_in_commons, SketchesInCommonPids),
+
+    SketchToId =
+	sketch_to_id:start(sketch_in_common_routing_fn(SketchesInCommonPids)),
+    put(sketch_to_id, SketchToId),
+
+    SketcherPids =
+	[ sketcher:start(get(sketch_to_id)) || _ <- lists:seq(1, ?SKETCH_SIZE) ],
+    put(sketchers, SketcherPids),   
+
+    stats:spawn_watcher(
+      SketchesInCommonPids ++ [SketchToId],
+      lists:duplicate(?NUM_SKETCH_IN_COMMONS,sketch_in_common) ++ [sketch_to_id]
+     ),
+
+    done.
+    
+    
+
+%    put(sketch_broadcast_router, broadcast_router:start(get(sketchers))).
 
 wait_for_sketches_in_common_to_complete() ->
-    util:ack(sketch_broadcast_router),
+%   util:ack(sketch_broadcast_router),
     util:ack(sketchers),
     util:ack(sketch_to_id),
-    util:ack(sketches_in_common).
+    util:ack(sketches_in_commons).
     
 start_candidate_calculation() ->
     %get(shingle_store) ! dump,
-    get(sketches_in_common) ! { send_to_coeff_calculator, get(shingle_store) }.
-    
-	       
+    [ P ! { send_to_coeff_calculator, get(shingle_store) } || P <- get(sketches_in_commons)]. 
+         
+sketch_in_common_routing_fn(Pids) ->
+    fun({ sketch_in_common, Id1, Id2 }=Msg) -> 
+	    Idx = (Id1+Id2) rem length(Pids),
+	    lists:nth(Idx+1, Pids) ! Msg
+    end.

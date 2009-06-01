@@ -7,3 +7,5 @@
 -define(SHINGLE_SIZE, 3).
 -define(SKETCH_SIZE, 50).
 -define(SKETCHES_IN_COMMON_CUTOFF, ?SKETCH_SIZE/2).
+
+-define(NUM_SKETCH_IN_COMMONS, 2).

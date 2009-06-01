@@ -26,6 +26,7 @@ loop(Freq) ->
 	    loop(Freq);
 
 	{ sketch_in_common, Id1, Id2 } ->
+%	    d("{ sketch_in_common, ~p, ~p }\n",[Id1,Id2]),
 	    Key = ensure_first_less_than(Id1,Id2),
 	    Freq2 = dict:update_counter(Key, 1, Freq),
 	    loop(Freq2);
@@ -49,8 +50,7 @@ emit_all_above(Calculator, [{{Id1,Id2},NumCommon}|T], Cutoff) ->
 	true -> Calculator ! { jaccard_coeff_for, Id1, Id2, NumCommon };
 	false -> do_nothing
     end,
-    emit_all_above(Calculator, T, Cutoff).
-	     
+    emit_all_above(Calculator, T, Cutoff).    
     
 		      
 
