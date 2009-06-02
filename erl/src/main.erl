@@ -33,27 +33,27 @@ wire_up_workers() ->
 	[ sketches_in_common:start() || _ <- lists:seq(1, ?NUM_SKETCH_IN_COMMONS) ],
     put(sketches_in_commons, SketchesInCommonPids),
 
-    SketchToId =
-	sketch_to_id:start(sketch_in_common_routing_fn(SketchesInCommonPids)),
-    put(sketch_to_id, SketchToId),
+    SketchesInCommonPidsRoutingFn = sketches_in_common:routing_fn(SketchesInCommonPids),
+    SketchToIdPids =
+	[ sketch_to_id:start(SketchesInCommonPidsRoutingFn) || _ <- lists:seq(1, ?NUM_SKETCH_TO_IDS) ],
+    put(sketch_to_ids, SketchToIdPids),
 
+    SketchToIdPidsRoutingFn = sketch_to_id:routing_fn(SketchToIdPids),
     SketcherPids =
-	[ sketcher:start(get(sketch_to_id)) || _ <- lists:seq(1, ?SKETCH_SIZE) ],
+	[ sketcher:start(SketchToIdPidsRoutingFn) || _ <- lists:seq(1, ?SKETCH_SIZE) ],
     put(sketchers, SketcherPids).   
 
 start_stats() ->
     NamesAndPids = [ 
 		     { sketches_in_common, get(sketches_in_commons) },
-		     { sketch_to_id, [get(sketch_to_id)] }
+		     { sketch_to_id, get(sketch_to_ids) }
 		    ],
     stats:spawn_watcher(NamesAndPids).
 
-%    put(sketch_broadcast_router, broadcast_router:start(get(sketchers))).
 
 wait_for_sketches_in_common_to_complete() ->
-%   util:ack(sketch_broadcast_router),
     util:ack(sketchers),
-    util:ack(sketch_to_id),
+    util:ack(sketch_to_ids),
 %    hd(get(sketches_in_commons)) ! dump,
     util:ack(sketches_in_commons).
     
@@ -61,8 +61,4 @@ start_candidate_calculation() ->
     %get(shingle_store) ! dump,
     [ P ! { send_to_coeff_calculator, get(shingle_store) } || P <- get(sketches_in_commons)]. 
          
-sketch_in_common_routing_fn(Pids) ->
-    fun({ sketch_in_common, Id1, Id2 }=Msg) -> 
-	    Idx = (Id1+Id2) rem length(Pids),
-	    lists:nth(Idx+1, Pids) ! Msg
-    end.
+

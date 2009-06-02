@@ -1,5 +1,5 @@
 -module(sketches_in_common).
--export([start/0,loop/1,emit_all_above/3]).
+-export([start/0,loop/1,emit_all_above/3,routing_fn/1]).
 -include("debug.hrl").
 -include("consts.hrl").
 
@@ -58,5 +58,11 @@ emit_all_above(Calculator, [{{Id1,Id2},NumCommon}|T], Cutoff) ->
     end,
     emit_all_above(Calculator, T, Cutoff).    
     
+routing_fn(Pids) ->
+    fun({ sketch_in_common, Id1, Id2 }=Msg) -> 
+	    Idx = (Id1+Id2) rem length(Pids),
+%	    d("route ~w to ~w\n",[Msg,Idx]),
+	    lists:nth(Idx+1, Pids) ! Msg
+    end.
 		      
 

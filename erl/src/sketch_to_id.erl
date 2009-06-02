@@ -1,5 +1,5 @@
 -module(sketch_to_id).
--compile(export_all).
+-export([start/1,init/1,routing_fn/1]).
 -include("debug.hrl").
 
 start(ReceiverFn) ->
@@ -58,3 +58,9 @@ emit_new_combos(Id1,Set) ->
       Set
       ).
 
+routing_fn(Pids) ->
+    fun({_,{sketch,Sketch}}=Msg) -> 
+	    Idx = Sketch rem length(Pids),
+%	    d("route ~w to ~w\n",[Msg,Idx]),
+	    lists:nth(Idx+1, Pids) ! Msg
+    end.
