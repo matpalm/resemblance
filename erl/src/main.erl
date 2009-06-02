@@ -7,6 +7,7 @@ main() ->
 %    spawn(etop,start,[]),
 
     wire_up_workers(),
+    start_stats(),
 
     parse:each_line(
       "test.data",
@@ -38,16 +39,14 @@ wire_up_workers() ->
 
     SketcherPids =
 	[ sketcher:start(get(sketch_to_id)) || _ <- lists:seq(1, ?SKETCH_SIZE) ],
-    put(sketchers, SketcherPids),   
+    put(sketchers, SketcherPids).   
 
-    stats:spawn_watcher(
-      SketchesInCommonPids ++ [SketchToId],
-      lists:duplicate(?NUM_SKETCH_IN_COMMONS,sketch_in_common) ++ [sketch_to_id]
-     ),
-
-    done.
-    
-    
+start_stats() ->
+    NamesAndPids = [ 
+		     { sketches_in_common, get(sketches_in_commons) },
+		     { sketch_to_id, [get(sketch_to_id)] }
+		    ],
+    stats:spawn_watcher(NamesAndPids).
 
 %    put(sketch_broadcast_router, broadcast_router:start(get(sketchers))).
 
@@ -55,6 +54,7 @@ wait_for_sketches_in_common_to_complete() ->
 %   util:ack(sketch_broadcast_router),
     util:ack(sketchers),
     util:ack(sketch_to_id),
+%    hd(get(sketches_in_commons)) ! dump,
     util:ack(sketches_in_commons).
     
 start_candidate_calculation() ->

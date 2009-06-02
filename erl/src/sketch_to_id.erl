@@ -19,7 +19,13 @@ loop(Store) ->
 	{Id, {sketch,Sketch}} ->
 %	    d("storing Id ~w Ske ~w\n",[Id,Sketch]),
 	    loop(add_to_store(Id,Sketch,Store));
-    
+ 
+	dump ->
+	    lists:foreach(
+	      fun({K,V}) -> d("K=~p V=~w\n",[K,length(sets:to_list(V))]) end,
+	      dict:to_list(Store)
+	      );
+
 	M ->
 	    d("unexpected ~p\n",[M]),
 	    loop(Store)
@@ -34,7 +40,7 @@ add_to_store(Id,Sketch,Store) ->
 		true -> % already an element, ignore
 		    Store;
 		_ ->
-		    d("emit new combo Sketch=~p Id=~p Others=~p\n",[Sketch,Id,length(sets:to_list(Set))]),
+%		    d("emit new combo Sketch=~p Id=~p Others=~p\n",[Sketch,Id,length(sets:to_list(Set))]),
 		    emit_new_combos(Id,Set),
 		    dict:store(Sketch,sets:add_element(Id,Set),Store)
 	    end;

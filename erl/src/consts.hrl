@@ -4,8 +4,8 @@
 -define(UHASH_M,   2305843009213693951).  % largish prime (2^61)-1 < MAX
 -define(UHASH_MAX, 18446744073709551616). % hash max value (2^64)
 
--define(SHINGLE_SIZE, 3).
+-define(SHINGLE_SIZE, 10).
 -define(SKETCH_SIZE, 50).
 -define(SKETCHES_IN_COMMON_CUTOFF, ?SKETCH_SIZE/2).
 
--define(NUM_SKETCH_IN_COMMONS, 2).
+-define(NUM_SKETCH_IN_COMMONS, 4).

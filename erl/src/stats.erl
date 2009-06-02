@@ -1,18 +1,18 @@
 -module(stats).
 -compile(export_all).
 
-spawn_watcher(Pids,Names) ->
-    spawn(?MODULE,loop,[Pids,Names]).
+spawn_watcher(NamesAndPids) ->
+    spawn(?MODULE,loop,[NamesAndPids]).
 
-loop(Pids,Names) ->
-    io:format("stats\n"),
-    lists:foreach(
-      fun({P,N}) -> check_msg_queue(P,N) end,
-      lists:zip(Pids,Names)
-      ),
+loop(NamesAndPids) ->
+    Stats = [ {Name, check_msg_queues(Pids)} || { Name,Pids } <- NamesAndPids ],
+    io:format("stats ~w\n",[Stats]),
     timer:sleep(1000),
-    loop(Pids,Names).
+    loop(NamesAndPids).
 
-check_msg_queue(Pid,Name) ->
-    { message_queue_len, N } = process_info(Pid, message_queue_len),
-    io:format("~p ~p\n",[Name,N]).
+check_msg_queues(Pids) ->
+    [ check_msg_queue(P) || P <- Pids ].
+   				  
+check_msg_queue(Pid) ->
+    { message_queue_len, Len } = process_info(Pid, message_queue_len),
+    Len.

@@ -16,6 +16,12 @@ loop(Freq) ->
 	dump ->
 	    FreqList = dict:to_list(Freq),
 	    d("number sketches in common entries ~p\n",[length(FreqList)]), 
+
+	    TotalInCommon = lists:sum(lists:map(
+			      fun({_Ids,Count}) -> Count end,
+			      FreqList)),
+	    d("number sketches in common total count ~p\n",[TotalInCommon]), 
+
 	    d("freqs=~w\n",[lists:sublist(freqs_as_list(Freq),10)]),
 	    loop(Freq);
 
