@@ -3,6 +3,10 @@
 -include("consts.hrl").
 -include("debug.hrl").
 
+-define(CC_CHECK_FREQ, 100). % lines
+-define(NUM_SKETCH_IN_COMMONS, 8).
+-define(NUM_SKETCH_TO_IDS, 8).
+
 main() ->
 %    spawn(etop,start,[]),
 
@@ -11,7 +15,10 @@ main() ->
 
     parse:each_line(
       "test.data",
-      fun(Line) -> process_a_line(Line) end
+      fun(Line, N) -> 
+	      potential_congestion_control_check(N),
+	      process_a_line(Line) 
+      end
       ),
 
     wait_for_sketches_in_common_to_complete(),
@@ -48,7 +55,7 @@ start_stats() ->
 		     { sketches_in_common, get(sketches_in_commons) },
 		     { sketch_to_id, get(sketch_to_ids) }
 		    ],
-    stats:spawn_watcher(NamesAndPids).
+    put(stats, stats:spawn_watcher(NamesAndPids)).
 
 
 wait_for_sketches_in_common_to_complete() ->
@@ -60,5 +67,13 @@ wait_for_sketches_in_common_to_complete() ->
 start_candidate_calculation() ->
     %get(shingle_store) ! dump,
     [ P ! { send_to_coeff_calculator, get(shingle_store) } || P <- get(sketches_in_commons)]. 
-         
+
+potential_congestion_control_check(N) ->         
+    case N rem ?CC_CHECK_FREQ of
+	0 -> stats:block_if_congested(get(stats));
+	_ -> done
+    end.
+
+
+   
 

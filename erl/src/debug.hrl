@@ -1,5 +1,5 @@
-%d(Msg) ->
-%    d(Msg,[]).
+d(Msg) ->
+    d(Msg,[]).
 d(Msg,Vars) ->
     d(?MODULE, Msg, Vars).
 d(Mod,Msg,Vars) ->
