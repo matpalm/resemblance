@@ -3,9 +3,9 @@
 -include("debug.hrl").
 -include("consts.hrl").
 
-start(ReceiverFn) ->
+start(Node,ReceiverFn) ->
     HashSeed = util:uhash_seed(?SHINGLE_SIZE),
-    spawn(?MODULE,loop,[HashSeed,ReceiverFn]).
+    spawn(Node,?MODULE,loop,[HashSeed,ReceiverFn]).
 
 loop(Seed, ReceiverFn) ->
 %    d(">loop seed ~p\n",[Seed]),

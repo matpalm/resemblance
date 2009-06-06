@@ -54,7 +54,7 @@ block_if_congested(Pid) ->
 
 gather_loop(NamesAndPids, ProcessLoop) ->
     Stats = [ { Name, check_msg_queues(Pids) } || { Name,Pids } <- NamesAndPids ],
-    io:format("stats ~w\n",[Stats]),
+    io:format("stats ~w ~w\n",[mem_usage(),Stats]),
     ProcessLoop ! { stats, Stats },
     timer:sleep(1000),
     gather_loop(NamesAndPids, ProcessLoop).
@@ -63,6 +63,12 @@ check_msg_queues(Pids) ->
     [ check_msg_queue(P) || P <- Pids ].
    				  
 check_msg_queue(Pid) ->
-    { message_queue_len, Len } = process_info(Pid, message_queue_len),
+    { message_queue_len, Len } = rpc:pinfo(Pid, message_queue_len),
     Len.
 
+mem_usage() ->
+    ProcInfo = [ rpc:pinfo(P,memory) || P <- processes() ],
+    MemorySizes = [ M || {memory,M} <- ProcInfo ],
+    lists:sum(MemorySizes).
+
+			 

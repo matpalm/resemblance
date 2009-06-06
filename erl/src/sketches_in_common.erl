@@ -1,10 +1,10 @@
 -module(sketches_in_common).
--export([start/0,loop/1,emit_all_above/3,routing_fn/1]).
+-export([start/1,loop/1,emit_all_above/3,routing_fn/1]).
 -include("debug.hrl").
 -include("consts.hrl").
 
-start() ->
-    spawn(?MODULE,loop,[dict:new()]).
+start(Node) ->
+    spawn(Node,?MODULE,loop,[dict:new()]).
 
 loop(Freq) ->
 %    d(">loop ~p ~p\n",[process_info(self(),message_queue_len),dict:size(Freq)]),

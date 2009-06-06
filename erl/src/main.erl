@@ -7,6 +7,11 @@
 -define(NUM_SKETCH_IN_COMMONS, 8).
 -define(NUM_SKETCH_TO_IDS, 8).
 
+restart_slaves() ->
+    erl_boot_server:start(["192.168.0.2"]),
+    net_adm:world(),
+    [ rpc:call(Node,init,restart,[]) || Node <- nodes() ].
+
 main() ->
 %    spawn(etop,start,[]),
 
@@ -37,27 +42,43 @@ wire_up_workers() ->
     put(shingle_store, shingle_store:start()),
     
     SketchesInCommonPids = 
-	[ sketches_in_common:start() || _ <- lists:seq(1, ?NUM_SKETCH_IN_COMMONS) ],
+	[ sketches_in_common:start(next_node()) || _ <- lists:seq(1, ?NUM_SKETCH_IN_COMMONS) ],
     put(sketches_in_commons, SketchesInCommonPids),
 
     SketchesInCommonPidsRoutingFn = sketches_in_common:routing_fn(SketchesInCommonPids),
     SketchToIdPids =
-	[ sketch_to_id:start(SketchesInCommonPidsRoutingFn) || _ <- lists:seq(1, ?NUM_SKETCH_TO_IDS) ],
+	[ sketch_to_id:start(next_node(), SketchesInCommonPidsRoutingFn) || _ <- lists:seq(1, ?NUM_SKETCH_TO_IDS) ],
     put(sketch_to_ids, SketchToIdPids),
 
     SketchToIdPidsRoutingFn = sketch_to_id:routing_fn(SketchToIdPids),
     SketcherPids =
-	[ sketcher:start(SketchToIdPidsRoutingFn) || _ <- lists:seq(1, ?SKETCH_SIZE) ],
+	[ sketcher:start(next_node(), SketchToIdPidsRoutingFn) || _ <- lists:seq(1, ?SKETCH_SIZE) ],
     put(sketchers, SketcherPids).   
 
 start_stats() ->
     NamesAndPids = [ 
-		     { sketches_in_common, get(sketches_in_commons) },
-		     { sketch_to_id, get(sketch_to_ids) }
+		     { sketch_to_id, get(sketch_to_ids) },
+		     { sketches_in_common, get(sketches_in_commons) }
 		    ],
     put(stats, stats:spawn_watcher(NamesAndPids)).
 
+next_node() ->
+    case node() of
+	'nonode@nohost' ->
+	    node(); % running as single node, spawn everything locally
+	_ ->
+	    case get(nodes) of
+		undefined -> next_node([]);
+		Nodes -> next_node(Nodes)
+	    end
+    end.
 
+next_node([]) ->
+    next_node(net_adm:world());
+next_node([H|T]) ->
+    put(nodes, T),
+    H.
+	     
 wait_for_sketches_in_common_to_complete() ->
     util:ack(sketchers),
     util:ack(sketch_to_ids),
@@ -70,8 +91,11 @@ start_candidate_calculation() ->
 
 potential_congestion_control_check(N) ->         
     case N rem ?CC_CHECK_FREQ of
-	0 -> stats:block_if_congested(get(stats));
-	_ -> done
+	0 -> 
+	    d("line ~p\n",[N]),
+	    stats:block_if_congested(get(stats));
+	_ -> 
+	    done
     end.
 
 

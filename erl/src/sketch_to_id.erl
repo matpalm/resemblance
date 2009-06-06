@@ -1,9 +1,9 @@
 -module(sketch_to_id).
--export([start/1,init/1,routing_fn/1]).
+-export([start/2,init/1,routing_fn/1]).
 -include("debug.hrl").
 
-start(ReceiverFn) ->
-    spawn(?MODULE,init,[ReceiverFn]).
+start(Node,ReceiverFn) ->
+    spawn(Node,?MODULE,init,[ReceiverFn]).
 
 init(ReceiverFn) ->
     put(receiver,ReceiverFn),
