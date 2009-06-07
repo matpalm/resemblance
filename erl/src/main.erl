@@ -52,6 +52,7 @@ wire_up_workers() ->
 
 start_stats() ->
     NamesAndPids = [ 
+		     { sketchers, get(sketchers) },
 		     { sketch_to_id, get(sketch_to_ids) },
 		     { sketches_in_common, get(sketches_in_commons) }
 		    ],
