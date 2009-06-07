@@ -22,7 +22,7 @@ class UniversalHash
 
 	def hash string
 		raise "only works with strings" unless string.is_a? String
-		raise "expects strings with length #{R}" unless string.length==3
+		raise "expects strings with length #{R}" unless string.length==R
 		value = 0
 		string.bytes.each_with_index do |char, index|
 			value += (@a[index] * char) % M
