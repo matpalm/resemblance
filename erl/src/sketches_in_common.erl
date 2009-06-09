@@ -1,7 +1,6 @@
 -module(sketches_in_common).
 -export([start/1,loop/1,emit_all_above/3,routing_fn/1]).
 -include("debug.hrl").
--include("consts.hrl").
 
 start(Node) ->
     spawn(Node,?MODULE,loop,[dict:new()]).
@@ -14,19 +13,20 @@ loop(Freq) ->
 	    loop(Freq);
 
 	dump ->
-	    FreqList = dict:to_list(Freq),
-	    d("number sketches in common entries ~p\n",[length(FreqList)]), 
-
-	    TotalInCommon = lists:sum(lists:map(
-			      fun({_Ids,Count}) -> Count end,
-			      FreqList)),
-	    d("number sketches in common total count ~p\n",[TotalInCommon]), 
-
-	    d("freqs=~w\n",[lists:sublist(freqs_as_list(Freq),10)]),
+	    Counts = lists:sort([ Count || {_,Count} <- dict:to_list(Freq) ]),
+	    N = length(Counts),
+	    case N of 
+		0 -> d("count: size=0 min=0 median=0 mean=0 max=0\n");
+		_ -> d("count: size=~p min=~p median=~p mean=~p max=~p\n",
+		       [N, hd(Counts), lists:nth(N div 2,Counts), lists:sum(Counts)/N, lists:nth(N,Counts)])
+	    end,
+	    CountsFreq = dict:to_list(lists:foldl(fun(I,D) -> dict:update_counter(I,1,D) end, dict:new(), Counts)),
+	    Values = [ Freq || {_Val,Freq} <- lists:keysort(1,CountsFreq) ],
+	    d("freqs ~w\n",[Values]),
 	    loop(Freq);
 
 	{ send_to_coeff_calculator, Calculator } ->
-	    emit_all_above(Calculator, dict:to_list(Freq), ?SKETCHES_IN_COMMON_CUTOFF),
+	    emit_all_above(Calculator, dict:to_list(Freq), opts:sketches_in_common_cutoff()),
 	    util:ack(Calculator),
 	    init:stop(),
 	    loop(Freq);
@@ -46,8 +46,8 @@ loop(Freq) ->
 ensure_first_less_than(A,B) when A > B -> { B,A };
 ensure_first_less_than(A,B) -> { A,B }.
     
-freqs_as_list(Freq) ->
-    lists:reverse(lists:keysort(2,dict:to_list(Freq))).
+%freqs_as_list(Freq) ->
+%    lists:reverse(lists:keysort(2,dict:to_list(Freq))).
     
 emit_all_above(_Calculator, [], _Cutoff) ->
     done;

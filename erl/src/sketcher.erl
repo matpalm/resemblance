@@ -1,10 +1,9 @@
 -module(sketcher).
 -compile(export_all).
 -include("debug.hrl").
--include("consts.hrl").
 
 start(Node,ReceiverFn) ->
-    HashSeed = util:uhash_seed(?SHINGLE_SIZE),
+    HashSeed = util:uhash_seed(opts:shingle_size()),
     spawn(Node,?MODULE,loop,[HashSeed,ReceiverFn]).
 
 loop(Seed, ReceiverFn) ->

@@ -21,10 +21,14 @@ loop(Store) ->
 	    loop(add_to_store(Id,Sketch,Store));
  
 	dump ->
-	    lists:foreach(
-	      fun({K,V}) -> d("K=~p V=~w\n",[K,length(sets:to_list(V))]) end,
-	      dict:to_list(Store)
-	      );
+	    Counts = lists:sort([ sets:size(Set) || {_,Set} <- dict:to_list(Store) ]),
+	    N = length(Counts),
+	    case N of 
+		0 -> d("count: size=0 min=0 median=0 mean=0 max=0\n");
+		_ -> d("count: size=~p min=~p median=~p mean=~p max=~p\n",
+		       [N, hd(Counts), lists:nth(N div 2,Counts), lists:sum(Counts)/N, lists:nth(N,Counts)])
+	    end,
+	    loop(Store);
 
 	M ->
 	    d("unexpected ~p\n",[M]),

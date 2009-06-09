@@ -1,14 +1,9 @@
 -module(main).
 -compile(export_all).
--include("consts.hrl").
 -include("debug.hrl").
 
--define(CC_CHECK_FREQ, 100). % lines
--define(NUM_SKETCH_IN_COMMONS, 8).
--define(NUM_SKETCH_TO_IDS, 8).
-
 main() ->
-%    spawn(etop,start,[]),
+ %    spawn(etop,start,[]),
 
     wire_up_workers(),
     start_stats(),
@@ -37,17 +32,17 @@ wire_up_workers() ->
     put(shingle_store, shingle_store:start()),
     
     SketchesInCommonPids = 
-	[ sketches_in_common:start(mnode:next_node()) || _ <- lists:seq(1, ?NUM_SKETCH_IN_COMMONS) ],
+	[ sketches_in_common:start(mnode:next_node()) || _ <- lists:seq(1, opts:num_sketches_in_common()) ],
     put(sketches_in_commons, SketchesInCommonPids),
 
     SketchesInCommonPidsRoutingFn = sketches_in_common:routing_fn(SketchesInCommonPids),
     SketchToIdPids =
-	[ sketch_to_id:start(mnode:next_node(), SketchesInCommonPidsRoutingFn) || _ <- lists:seq(1, ?NUM_SKETCH_TO_IDS) ],
+	[ sketch_to_id:start(mnode:next_node(), SketchesInCommonPidsRoutingFn) || _ <- lists:seq(1, opts:num_sketch_to_id()) ],
     put(sketch_to_ids, SketchToIdPids),
 
     SketchToIdPidsRoutingFn = sketch_to_id:routing_fn(SketchToIdPids),
     SketcherPids =
-	[ sketcher:start(mnode:next_node(), SketchToIdPidsRoutingFn) || _ <- lists:seq(1, ?SKETCH_SIZE) ],
+	[ sketcher:start(mnode:next_node(), SketchToIdPidsRoutingFn) || _ <- lists:seq(1, opts:sketch_size()) ],
     put(sketchers, SketcherPids).   
 
 start_stats() ->
@@ -69,7 +64,7 @@ start_candidate_calculation() ->
     [ P ! { send_to_coeff_calculator, get(shingle_store) } || P <- get(sketches_in_commons)]. 
 
 potential_congestion_control_check(N) ->         
-    case N rem ?CC_CHECK_FREQ of
+    case N rem opts:cc_check_freq() of
 	0 -> 
 	    d("line ~p\n",[N]),
 	    stats:block_if_congested(get(stats));
