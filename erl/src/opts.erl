@@ -1,12 +1,6 @@
 -module(opts).
 -compile(export_all).
 
-num_sketches_in_common() ->
-    int_prop(num_sketches_in_common,4).
-
-num_sketch_to_id() ->
-    int_prop(num_sketch_to_id,4).
-
 cc_check_freq() ->
     int_prop(cc_check_freq,1000).
 

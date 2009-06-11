@@ -2,15 +2,14 @@
 -export([
 	 shingles/1, shingles/2,
 	 uhash/2, uhash_seed/1,
-	 tostr/0, tostrloop/0,
 	 ack/1
 	]).
 	  
-%-define(UHASH_M,   3995818069). % largish prime < MAX
-%-define(UHASH_MAX, 4294967296). % hash max value (2^32)
+-define(UHASH_M,   1234). % largish prime < MAX
+-define(UHASH_MAX, 23424). % hash max value (2^32)
 
--define(UHASH_M,   2305843009213693951).  % largish prime (2^61)-1 < MAX
--define(UHASH_MAX, 18446744073709551616). % hash max value (2^64)
+%-define(UHASH_M,   2305843009213693951).  % largish prime (2^61)-1 < MAX
+%-define(UHASH_MAX, 18446744073709551616). % hash max value (2^64)
 
 shingles(Str) ->
     shingles(Str, opts:shingle_size()).
@@ -38,16 +37,6 @@ uhash([S|TS], [A|TA], V) ->
 uhash_seed(N) ->    
     [ random:uniform(?UHASH_M) || _ <- lists:seq(1,N) ].
 
-
-tostr() ->
-    spawn(?MODULE,tostrloop,[]).
-
-tostrloop() ->
-    receive
-	M ->
-	    io:format("~w tostr ~p\n",[self(),M])
-    end,
-    tostrloop().
 
 ack(Pid) when is_atom(Pid) -> 
     ack(get(Pid));

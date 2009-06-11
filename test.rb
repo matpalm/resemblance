@@ -103,7 +103,22 @@ def compare_erl_sketch
 	puts run "./compare.rb shingle.result.#{N} #{file} #{MIN_RES}"
 end
 
+def compare_erl_sketch2
+	puts "---running erl sketch"
+	file = "sketch.result.erl.#{N}"
+	run_unless_file_exists(file) do	
+		run "head -n #{N} name_addr > test.data"
+		tmp_file = "/tmp/erl.#{$$}.out"
+		time_call do 
+			run "cat test.data | erl -noshell -pa erl/ebin -s main main | ./convert_erl.rb | ./freq.rb false > #{tmp_file}"
+			run "cat test.data | ./determine_jaccard.rb #{tmp_file} > #{file}"
+		end
+#		run "rm #{tmp_file}"
+	end
+	puts "#lines= #{`wc -l #{file}`}"
+	puts run "./compare.rb shingle.result.#{N} #{file} #{MIN_RES}"
+end
 
 #compare_sketch 64, 10, 2
-compare_erl_sketch
+compare_erl_sketch2
 
