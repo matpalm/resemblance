@@ -2,7 +2,7 @@
 -compile(export_all).
 
 start() ->
-    mysql_conn:start("localhost", undefined, "mat", "mat", "resemblance", undefined, undefined, undefined).
+    mysql:start_link(p1, "localhost", "mat", "mat", "resemblance").
     
 insert_document_fn() ->
     mysql:prepare(insert_document, <<"insert into documents (id,data) values (?,?)">>),
