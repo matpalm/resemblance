@@ -13,8 +13,15 @@ files_from_command_line_args() ->
     {ok,Args} = init:get_argument(files),
     hd(Args).
     
+
 % given  ["1.0.gz","1.1.gz","2.0.gz","2.1.gz","2.2.gz"] 
-% return [ {"0",["1.0.gz","2.0.gz"]} , {"1",["1.1.gz","2.1.gz"]}, {2,["2.2.gz"]} ] 
+% return [ {"0",["1.0.gz","2.0.gz"]} , {"1",["1.1.gz","2.1.gz"]}, {2,["2.2.gz"]} 
+% recall: N.M is the Mth emit set of sketcher N.
+% partition strategy rationale: 
+% - no sketches in common for any given N.M 
+% - no instances of N.* with have an overlap of sketches in common
+% - most likely case of overlap will be N1.M and N2.M, though this will diverge as M increases
+
 partition_filenames(Filenames) ->
     FilesSplit = [ split(Filename) || Filename <- Filenames ],
     lists:keysort(1,partition(FilesSplit)).
