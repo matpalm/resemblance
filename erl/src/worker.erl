@@ -1,25 +1,36 @@
 -module(worker).
--export([start/1, loop/1]).
+-export([start/1, init/2]).
 -include("debug.hrl").
+-define(DUMP_FREQ, 50).
 
-start(DbInsertFn) ->
+start(Id) ->
     HashSeed = util:uhash_seed(opts:shingle_size()),
-    db:add_to_db_pool(), % would prefer connection per worker but some problems connecting...
-    spawn(?MODULE,loop,[{HashSeed,dict:new(),DbInsertFn}]).
+    spawn(?MODULE,init,[Id,HashSeed]).
 
-loop({HashSeed,Store,DbInsertFn}=State) ->
+init(Id,HashSeed) ->
+    put(id,Id),
+    put(num_flushes,0),
+    loop({HashSeed,dict:new(),[]}).
+
+loop({HashSeed,SketchToId,SketchesInCommon}=State) ->
     receive
 	{ack,Pid} ->
-	    Pid ! {ack,self()},
-	    loop(State);
-
+	    Pid ! {ack,self()}, 
+ 	    loop(State);       		
+	
 	{Id, {shingles, Shingles}} ->
-%	    d("got shingles ~p\n",[Shingles]),
+    %	    d("got shingles ~p\n",[Shingles]),
 	    Sketch = shingles_to_sketch(HashSeed, Shingles),
 %	    d("Id=~p sketch=~p\n",[Id,Sketch]),
-	    Store2 = add_to_store(Id,Sketch,Store,DbInsertFn),
-	    loop({HashSeed,Store2,DbInsertFn});
+	    {NewCombo, SketchToId2} = add_to_store(Id,Sketch,SketchToId), 
+	    SketchesInCommon2 = update_sketches_in_common(NewCombo,SketchesInCommon),
+	    SketchesInCommon3 = write_to_disk_if_enough_entries(SketchesInCommon2),
+	    loop({HashSeed,SketchToId2,SketchesInCommon3}); 
 
+	dump ->
+	    sketches:write(next_filename(),SketchesInCommon),
+	    loop(State);
+	    
 	M ->
 	    d("unexpected ~p\n",[M]),
 	    loop(State)
@@ -32,31 +43,41 @@ shingles_to_sketch(Seed, Shingles) ->
     Hashes = [ util:uhash(S,Seed) || S <- Shingles ],
     lists:min(Hashes).
 
-add_to_store(Id,Sketch,Store,DbInsertFn) -> 
-    case dict:is_key(Sketch,Store) of
+add_to_store(Id,Sketch,SketchToId) -> 
+    case dict:is_key(Sketch,SketchToId) of
 	true ->
-	    Set = dict:fetch(Sketch,Store),
+	    Set = dict:fetch(Sketch,SketchToId),
 	    case sets:is_element(Id,Set) of
 		true -> % already an element, ignore
-		    Store;
+		    {nil, SketchToId};
 		_ ->
 %		    d("emit new combo Sketch=~p Id=~p Others=~p\n",[Sketch,Id,length(sets:to_list(Set))]),
-		    emit_new_combos(Id,Set,DbInsertFn),
-		    dict:store(Sketch,sets:add_element(Id,Set),Store)
+		    %emit_new_combos(Id,Set),
+		    {{Id,Set}, dict:store(Sketch,sets:add_element(Id,Set),SketchToId)}
 	    end;
 	_ ->
-	    dict:store(Sketch,
+	    {nil, dict:store(Sketch,
 		       sets:add_element(Id,sets:new()),
-		       Store)
+		       SketchToId)}
     end.
 
-emit_new_combos(Id1,Set,DbInsertFn) ->
-    lists:foreach(
-      fun(Id2) -> DbInsertFn(Id1, Id2) end,
-      sets:to_list(Set)
-     ).
+update_sketches_in_common(nil, SketchesInCommon) ->
+    SketchesInCommon;
 
-% note: as long as Ids are increasing from file there is no need to check order, 
-% Id1 will always be > Id2
-%emit_combo(Id1,Id2) ->
-%    io:format("sic ~p ~p\n",[Id2,Id1]).
+update_sketches_in_common({Id1,Set}, SketchesInCommon) ->
+    NewCombos = [ { Id2, Id1 } || Id2 <- sets:to_list(Set) ],
+    NewCombos ++ SketchesInCommon.
+
+write_to_disk_if_enough_entries(List) when length(List) < ?DUMP_FREQ ->
+    List;
+
+write_to_disk_if_enough_entries(List) ->
+    Filename = next_filename(),
+    spawn(sketches,write,[Filename,List]),
+    [].
+    
+next_filename() ->
+    NumFlushes = get(num_flushes),
+    put(num_flushes, NumFlushes+1),
+    integer_to_list(get(id)) ++ "." ++ integer_to_list(NumFlushes).
+    
