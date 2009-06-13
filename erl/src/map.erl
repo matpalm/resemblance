@@ -10,7 +10,6 @@ main() ->
     wait_for_sketches_in_common_to_complete(),
     [ W ! dump || W <- get(workers)],
     %start_candidate_calculation(),
-    init:stop(),
     done.
 
 parse_stdin(N) ->
@@ -19,7 +18,7 @@ parse_stdin(N) ->
 	    done;
 	Line ->
 	    process_a_line(Line),
-%	    potential_congestion_control_check(N),
+	    potential_congestion_control_check(N),
 	    parse_stdin(N+1)
     end.
 

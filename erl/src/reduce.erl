@@ -5,7 +5,7 @@
 main() ->
     Files = files_from_command_line_args(),
     Partitioned = partition_filenames(Files),
-    io:format("Partitiones are ~p\n",[Partitioned]),
+    %io:format("Partitiones are ~p\n",[Partitioned]),
     _ReducerPids = [ spawn(?MODULE,process_files,[FileList]) || {_Id,FileList} <- Partitioned ],
     done.    
 
@@ -45,17 +45,19 @@ partition([[_,B,_]=File|Files],Partitions) ->
     end.
 
 process_files(FileList) ->
-    d("processing ~w\n",[FileList]),
+%    d("processing ~w\n",[FileList]),
     Freqs = process_files(FileList, dict:new()),
-    d("intermediate result (size ~p) ~w\n",[dict:size(Freqs),dict:to_list(Freqs)]),
+    d("intermediate result (size ~p) \n",[dict:size(Freqs)]),%,dict:to_list(Freqs)]),
+    d("intermediate result (freq ~p) \n",[freq_table_of_counts(Freqs)]),%,dict:to_list(Freqs)]),
     FreqsWithoutOnes = remove_single_entries(Freqs),
-    d("result (size ~p) ~w\n",[dict:size(FreqsWithoutOnes),dict:to_list(FreqsWithoutOnes)]).
+    d("result (size ~p) \n",[dict:size(FreqsWithoutOnes)]).%,dict:to_list(FreqsWithoutOnes)]).
     
 process_files([], Freq) ->
     Freq;
 
 process_files([File|FileList], Freq) ->    
     SketchPairs = sketches:read(File),
+    d("~p has ~p sketches in common\n",[File,length(SketchPairs)]),
     Freq2 = lists:foldl(
       fun(SketchPair,Acc) -> dict:update_counter(SketchPair,1,Acc) end,
       Freq,
@@ -68,6 +70,15 @@ remove_single_entries(Freqs) ->
       fun(_,F) -> F > 1 end,
       Freqs
      ).
+
+% K -> V, sketch_pair -> freq, eg {1,2} -> 12
+freq_table_of_counts(Dict) ->
+    Counts = [ V || {_K,V} <- dict:to_list(Dict)],
+    Freqs = lists:foldl(
+      fun(C,Freqs) -> dict:update_counter(C,1,Freqs) end,
+      dict:new(),
+      Counts),
+    lists:keysort(1,dict:to_list(Freqs)).
 	       
     
     

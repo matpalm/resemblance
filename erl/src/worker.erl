@@ -1,7 +1,7 @@
 -module(worker).
 -export([start/1, init/2]).
 -include("debug.hrl").
--define(DUMP_FREQ, 50).
+-define(DUMP_FREQ, 200000).
 
 start(Id) ->
     HashSeed = util:uhash_seed(opts:shingle_size()),

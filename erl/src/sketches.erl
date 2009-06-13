@@ -24,7 +24,8 @@ slurp(File,Acc) ->
 	    slurp(File,[B|Acc])
     end.
   
-
+number_of_entries(Filename) ->
+    length(read(Filename).)
     
     
     
