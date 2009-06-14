@@ -1,6 +1,9 @@
 -module(opts).
 -compile(export_all).
 
+write_to_disk_freq() ->
+    int_prop(write_to_disk_freq,3000).
+
 cc_check_freq() ->
     int_prop(cc_check_freq,1000).
 

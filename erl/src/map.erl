@@ -4,21 +4,23 @@
 
 main() ->
  %    spawn(etop,start,[]),
+    io:format("G\n"),
     wire_up_workers(),
     start_stats(),   
-    parse_stdin(0),  
+    TotalLines = parse_stdin(0),  
     wait_for_sketches_in_common_to_complete(),
-    [ W ! dump || W <- get(workers)],
+    [ W ! {dump,TotalLines} || W <- get(workers)],
     %start_candidate_calculation(),
     done.
 
 parse_stdin(N) ->
     case io:get_line('') of 
 	eof ->
-	    done;
+	    N;
 	Line ->
 	    process_a_line(Line),
-	    potential_congestion_control_check(N),
+%	    potential_congestion_control_check(N),
+	    potential_write_to_disk(N),
 	    parse_stdin(N+1)
     end.
 
@@ -54,6 +56,16 @@ potential_congestion_control_check(N) ->
 	    done
     end.
 
+potential_write_to_disk(N) when N>0 ->         
+    case N rem opts:write_to_disk_freq() of
+	0 -> 
+	    d("line ~p\n",[N]),
+	    [ W ! {dump,N} || W <- get(workers)];
+	_ -> done
+    end;
+
+potential_write_to_disk(_N) ->
+    zero_case.
 
    
 

@@ -2,13 +2,18 @@
 -compile(export_all).
 -include("debug.hrl").
 
-write(File, List) ->
-    Filename = "sics/" ++ File ++ ".gz",
+write(File, Data) ->
+    Filename = File ++ ".gz",
     {ok,F} = file:open(Filename, [write,delayed_write,compressed,raw]),
-    d(">> wrote ~p entries to ~p\n",[length(List),Filename]),
-    file:write(F,term_to_binary(List)),
-    d("<< wrote ~p entries to ~p\n",[length(List),Filename]),
+    file:write(F,term_to_binary(Data)),
+    write_msg(Data,Filename),
     file:close(F).
+
+write_msg(Data,Filename) when is_list(Data) ->
+    d("wrote ~p list entries to ~p\n",[length(Data),Filename]);
+
+write_msg(Data,Filename) ->
+    d("wrote ~p dict entries to ~p\n",[dict:size(Data),Filename]).
 
 read(Filename) ->
     {ok,F} = file:open(Filename, [read,compressed,raw]),
@@ -25,7 +30,7 @@ slurp(File,Acc) ->
     end.
   
 number_of_entries(Filename) ->
-    length(read(Filename).)
+    length(read(Filename)).
     
     
     
