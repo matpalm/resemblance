@@ -1,5 +1,5 @@
 -module(worker).
--export([start/1, init/2]).
+-export([start/1, init/2, dump_sketches_in_common/2]).
 -include("debug.hrl").
 -define(DUMP_FREQ, 200000).
 
@@ -24,20 +24,22 @@ loop({HashSeed,SketchToId,SketchesInCommon}=State) ->
 %	    d("Id=~p sketch=~p\n",[Id,Sketch]),
 	    {NewCombo, SketchToId2} = add_to_store(Id,Sketch,SketchToId), 
 	    SketchesInCommon2 = update_sketches_in_common(NewCombo,SketchesInCommon),
-	    %SketchesInCommon3 = write_to_disk_if_enough_entries(SketchesInCommon2),
 	    loop({HashSeed,SketchToId2,SketchesInCommon2}); 
 
 	{dump,N} ->
 	    Filename = next_filename(N),
-	    spawn(sketches,write,[Filename,SketchesInCommon]),
+	    spawn(?MODULE, dump_sketches_in_common ,[Filename,SketchesInCommon]),
 	    loop({HashSeed,SketchToId,[]});
-	    
+	
+	{final_dump,N} ->
+	    Filename = next_filename(N),
+	    worker:dump_sketches_in_common(Filename,SketchesInCommon),
+	    loop({HashSeed,SketchToId,[]});
+
 	M ->
 	    d("unexpected ~p\n",[M]),
 	    loop(State)
 
-%    after 5000 ->
-%	    d("timeout")
     end.
 
 shingles_to_sketch(Seed, Shingles) ->
@@ -76,6 +78,10 @@ update_sketches_in_common({Id1,Set}, SketchesInCommon) ->
 %    Filename = next_filename(),
 %    spawn(sketches,write,[Filename,List]),
 %    [].
+
+dump_sketches_in_common(Filename,SketchesInCommon) ->
+    SketchesInCommonFreq = [ {S,1} || S <- SketchesInCommon ],
+    sketches:write(Filename,SketchesInCommonFreq).
     
 next_filename(N) ->
     %NumFlushes = get(num_flushes),

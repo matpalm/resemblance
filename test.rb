@@ -119,6 +119,25 @@ def compare_erl_sketch2
 	puts run "./compare.rb shingle.result.#{N} #{file} #{MIN_RES}"
 end
 
+def compare_erl_map_reduce
+	puts "---running erl sketch"
+	file = "sketch.result.erl.mr.#{N}"	
+	run_unless_file_exists(file) do	
+		run "head -n #{N} name_addr > test.data"
+		run "mkdir sics_map 2>/dev/null"
+		run "rm sics_map/*"
+		time_call do 
+			run "cat test.data | erl -noshell -pa erl/ebin -s map main > map.out"
+			run "erl -noshell -pa erl/ebin -s reduce main -files sics_map/* > #{file}"
+		end
+	end
+	puts "#lines= #{`wc -l #{file}`}"
+	puts run "./compare.rb shingle.result.#{N} #{file} #{MIN_RES}"
+end
+
+compare_erl_map_reduce
+
 #compare_sketch 64, 10, 2
-compare_erl_sketch2
+#compare_sketch 64, 10, 2
+#compare_erl_sketch2
 

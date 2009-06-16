@@ -6,7 +6,8 @@ write(File, Data) ->
     Filename = File ++ ".gz",
     {ok,F} = file:open(Filename, [write,delayed_write,compressed,raw]),
     file:write(F,term_to_binary(Data)),
-    write_msg(Data,Filename),
+   
+write_msg(Data,Filename),
     file:close(F).
 
 write_msg(Data,Filename) when is_list(Data) ->
@@ -27,11 +28,22 @@ slurp(File,Acc) ->
 	    list_to_binary(lists:reverse(Acc));
 	{ok,B} ->
 	    slurp(File,[B|Acc])
-    end.
-  
-number_of_entries(Filename) ->
-    length(read(Filename)).
-    
+    end.  
+
+cat() ->    
+    Files = files_from_command_line_args(),
+    cat(Files).
+
+cat([]) ->
+    init:stop();
+
+cat([F|Fs]) ->
+    d("~p ~w\n",[F,read(F)]),
+    cat(Fs).
+
+files_from_command_line_args() ->
+    {ok,Args} = init:get_argument(files),
+    hd(Args).
     
     
     

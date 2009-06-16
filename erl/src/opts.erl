@@ -11,7 +11,7 @@ sketch_size() ->
     int_prop(sketch_size,20).
 
 sketches_in_common_cutoff() ->
-    int_prop(sketches_in_common_cutoff, (sketch_size()/2)).
+    int_prop(sketches_in_common_cutoff, (sketch_size()/3)).
 
 shingle_size() ->
     int_prop(shingle_size,10).

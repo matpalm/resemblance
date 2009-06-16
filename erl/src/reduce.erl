@@ -1,20 +1,18 @@
 -module(reduce).
--export([main/0,process_and_write_files/2,display_result/0]).
+-export([main/0,process_and_write_files/2]).
 %-compile(export_all).
 -include("debug.hrl").
 
 main() ->
-    Files = files_from_command_line_args(),
+    Files = sketches:files_from_command_line_args(),
     Partitioned = partition_filenames(Files),
-    io:format("Partitiones are ~p\n",[Partitioned]),
-    _ReducerPids = [ spawn(?MODULE,process_and_write_files,[Id,FileList]) || {Id,FileList} <- Partitioned ],
-    done.    
+%    io:format("Partitiones are ~p\n",[Partitioned]),
+    Self = self(),
+    _ReducerPids = [ spawn(?MODULE,process_and_write_files,[Self,FileList]) || {_,FileList} <- Partitioned ],
+    [ receive ack -> done end || _ <- lists:seq(1,length(Partitioned)) ],
+    init:stop().    
 
-files_from_command_line_args() ->
-    {ok,Args} = init:get_argument(files),
-    hd(Args).
     
-
 % given  ["1.0.gz","1.1.gz","2.0.gz","2.1.gz","2.2.gz"] 
 % return [ {"0",["1.0.gz","2.0.gz"]} , {"1",["1.1.gz","2.1.gz"]}, {2,["2.2.gz"]} 
 % recall: N.M is the Mth emit set of sketcher N.
@@ -45,16 +43,21 @@ partition([[_,B,_]=File|Files],Partitions) ->
 	false -> partition(Files,dict:store(B,[Filename],Partitions))
     end.
 
-process_and_write_files(Id,FileList) ->
+process_and_write_files(Pid,FileList) ->
 %    d("processing ~w\n",[FileList]),
     FreqList = process_files(FileList, []),
 %    d("intermediate result (size ~p)\n",[length(FreqList)]),
 %    d("intermediate result (result ~w)\n",[FreqList]),
 %    d("intermediate result (freq ~w) \n",[freq_table_of_counts(FreqList)]),%,dict:to_list(Freqs)]),
     PrunedFreqList = prune_entries(FreqList),
-    sketches:write("sics_reduce/"++Id, PrunedFreqList),
+    lists:foreach(
+      fun({{Id1,Id2},_F}) -> io:format("~p ~p\n",[Id1,Id2]) end,
+      PrunedFreqList
+     ),
+%    sketches:write("sics_reduce/"++Id, PrunedFreqList),
 %    d("final result (size ~p)\n",[length(PrunedFreqList)]),
 %    d("final result ~w\n",[PrunedFreqList]),
+    Pid ! ack,
     done.
     
 process_files([], Result) ->
@@ -62,37 +65,36 @@ process_files([], Result) ->
 
 process_files([File|FileList], FreqList) ->    
     SketchPairs = sketches:read(File),
-    d("~p has ~p entries\n",[File,length(SketchPairs)]),
+%    d("~p has ~p entries\n",[File,length(SketchPairs)]),
     %d("freqlist ~w\n",[FreqList]),
     Combined = combine(SketchPairs, FreqList),
     %d("combined ~w\n",[Combined]),
-%    Freq2 = lists:foldl(
-%      fun(SketchPair,Acc) -> dict:update_counter(SketchPair,1,Acc) end,
-%      FreqList,
-%      SketchPairs
-%     ),
     process_files(FileList,Combined).
 
-% SketchPairs = [ {1,2}, {3,4}, ... ]
 % FreqList = [ {{1,2},2}, {{3,4},1}, ... ]
-combine(SketchPairs, FreqList) ->
-    combine(SketchPairs, FreqList, []).
+combine(FL1, FL2) ->
+    case length(FL1) < length(FL2) of 
+	true  -> combine(FL1, FL2, []);
+	false -> combine(FL2, FL1, [])
+    end.
 
 combine([],[],Acc) ->
     lists:reverse(Acc);
 
-combine([SketchPair|RemainingSketchPairs],[],Acc) ->
-    combine(RemainingSketchPairs,[],[{SketchPair,1}|Acc]);
+combine(FL1,[],Acc) ->
+    combine([],FL1,Acc);
 
-combine([],[Freq|RemainingFreqs],Acc) ->
-    combine([],RemainingFreqs,[Freq|Acc]);
+combine([],[Freq|Freqs],Acc) ->
+    combine([],Freqs,[Freq|Acc]);
 
-combine([SP1|RemainingSketchPairs]=L1,[{SP2,Freq}|RemainingFreqs]=L2,Acc) ->
+combine([{SP1,Freq1}=F1|Freqs1]=L1,
+        [{SP2,Freq2}=F2|Freqs2]=L2,
+        Acc) ->
     case SP1 == SP2 of
-	true -> combine(RemainingSketchPairs,RemainingFreqs,[{SP1,Freq+1}|Acc]);
+	true -> combine(Freqs1,Freqs2,[{SP1,Freq1+Freq2}|Acc]);
 	false -> case SP1 < SP2 of
-		     true  -> combine(RemainingSketchPairs,L2,[{SP1,1}|Acc]);
-		     false -> combine(L1,RemainingFreqs,[{SP2,Freq}|Acc])		 
+		     true  -> combine(Freqs1,L2,[F1|Acc]);
+		     false -> combine(L1,Freqs2,[F2|Acc])		 
 		 end
     end.    
 
@@ -112,8 +114,3 @@ freq_table_of_counts(FreqList) ->
       Counts),
     lists:keysort(1,dict:to_list(Freqs)).
 	       
-display_result() ->
-    {ok,F} = init:get_argument(file),
-    F2 = hd(hd(F)),    
-    d("~w\n",[lists:keysort(2,sketches:read(F2))]).
-    

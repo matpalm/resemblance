@@ -8,8 +8,9 @@ main() ->
     wire_up_workers(),
     start_stats(),   
     TotalLines = parse_stdin(0),  
+    get_workers_to_do_final_dump(TotalLines),
     wait_for_sketches_in_common_to_complete(),
-    [ W ! {dump,TotalLines} || W <- get(workers)],
+    init:stop(),
     %start_candidate_calculation(),
     done.
 
@@ -47,6 +48,9 @@ start_stats() ->
 wait_for_sketches_in_common_to_complete() ->
     util:ack(workers).
 
+get_workers_to_do_final_dump(TotalLines) ->
+    [ W ! {final_dump,TotalLines} || W <- get(workers)].
+
 potential_congestion_control_check(N) ->         
     case N rem opts:cc_check_freq() of
 	0 -> 
@@ -61,7 +65,8 @@ potential_write_to_disk(N) when N>0 ->
 	0 -> 
 	    d("line ~p\n",[N]),
 	    [ W ! {dump,N} || W <- get(workers)];
-	_ -> done
+	_ -> 
+	    done
     end;
 
 potential_write_to_disk(_N) ->
