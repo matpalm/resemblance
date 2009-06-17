@@ -1,1 +1,1 @@
-erl -noshell -pa ebin -s sketches cat -files $*
+erl -noshell -pa ebin -s file_util cat -files $* -s init stop

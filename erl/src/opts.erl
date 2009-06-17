@@ -1,6 +1,12 @@
 -module(opts).
 -compile(export_all).
 
+num_mappers() ->
+    int_prop(num_mappers,4).
+
+num_reducers() ->
+    int_prop(num_reducers,4).
+
 write_to_disk_freq() ->
     int_prop(write_to_disk_freq,3000).
 

@@ -1,10 +1,11 @@
--module(sketches).
+-module(file_util).
 -compile(export_all).
 -include("debug.hrl").
 
 write(File, Data) ->
     Filename = File ++ ".gz",
     {ok,F} = file:open(Filename, [write,delayed_write,compressed,raw]),
+    d("F=~p\n",[F]),
     file:write(F,term_to_binary(Data)),
    
 write_msg(Data,Filename),
@@ -44,6 +45,5 @@ cat([F|Fs]) ->
 files_from_command_line_args() ->
     {ok,Args} = init:get_argument(files),
     hd(Args).
-    
     
     
