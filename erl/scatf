@@ -1,0 +1,1 @@
+erl -noshell -pa ebin -s file_util cat -s init stop -format -input_files $* 

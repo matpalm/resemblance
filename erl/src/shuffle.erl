@@ -4,19 +4,21 @@
 -include("debug.hrl").
 
 main() ->
-    Files = file_util:files_from_command_line_args(),
-    SortedKeyValues = process(Files,[]),
+    InputFiles = file_util:input_files(),
+    SortedKeyValues = process(InputFiles,[]),
     Filtered = filter(SortedKeyValues),
-    distribute_over_N_files(Filtered,10),
+    util:ensure_output_dir_created(),
+    util:distribute_over_N_files(Filtered,10),
     init:stop().
 
 process([],Result) ->
     Result;
 
 process([File|Files],Result) ->
-    CollectedFile = collect_values_for_key(file_util:read(File)),
+    Data = file_util:read(File),
+    CollectedFile = collect_values_for_key(lists:sort(Data)),
     CombinedWithResult = util:merge(CollectedFile,Result),
-    d("file=~p collected #~w combined #~w\n",[File,length(CollectedFile),length(CombinedWithResult)]),
+%    d("file=~p collected #~w combined #~w\n",[File,length(CollectedFile),length(CombinedWithResult)]),
     process(Files,CombinedWithResult).
     
 filter(KeyValues) ->
@@ -25,29 +27,6 @@ filter(KeyValues) ->
       KeyValues
      ).
      
-distribute_over_N_files(List,N) ->
-    write_to_file(0,distribute_over_N_lists(List,N)).
-
-distribute_over_N_lists(List,N) ->
-    EmptyLists = lists:duplicate(N,[]),
-    distribute_over_N_lists(List,EmptyLists,[]).
-
-distribute_over_N_lists([],ToFill,Filled) ->
-    ToFill ++ Filled;
-
-distribute_over_N_lists(List,[],Filled) ->
-    distribute_over_N_lists(List,Filled,[]);
-
-distribute_over_N_lists([H|T],[LH|LT],Filled) ->
-    distribute_over_N_lists(T, LT, [[H|LH]|Filled]).
-
-write_to_file(N,[]) ->
-    done;
-
-write_to_file(N, [H|T]) ->
-    file_util:write("sics_shuffled/"++integer_to_list(N), H),
-    write_to_file(N+1,T).
-
 % assume input sorted ??
 % in  [ {k1,v1}, {k1,v2}, {k2,v1} ]
 % out [ {k1,[v1,v2]}, {k2,[v1]} ]
@@ -63,7 +42,6 @@ collect_values_for_key([],CombiningKey,Values,Result) ->
     lists:reverse(FinalResult);
 
 collect_values_for_key([{K,V}|RemainingKV],CombiningKey,Values,Result) ->
-%    d("K=~p V=~p RemainingKV=~w CombiningKey=~w Value2=~w Result=~w\n",[K,V,RemainingKV,CombiningKey,Values,Result]),
     case K == CombiningKey of
 	true ->
 	    collect_values_for_key(RemainingKV,K,[V|Values],Result);

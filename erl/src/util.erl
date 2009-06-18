@@ -1,12 +1,15 @@
 -module(util).
--export([ shingles/1, shingles/2, uhash/2, uhash_seed/1, ack/1, merge/2 ]).
+-export([ shingles/1, shingles/2, uhash/2, uhash_seed/1, ack/1, merge/2, 
+	  distribute_over_N_lists/2, distribute_over_N_files/2,
+	  ensure_output_dir_created/0,
+	  slurp_stdin/0, slurp_stdin/1]).
 %-compile(export_all).
 
--define(UHASH_M,   1234). % largish prime < MAX
--define(UHASH_MAX, 23424). % hash max value (2^32)
+%-define(UHASH_M,   1234). % largish prime < MAX
+%-define(UHASH_MAX, 23424). % hash max value (2^32)
 
-%-define(UHASH_M,   2305843009213693951).  % largish prime (2^61)-1 < MAX
-%-define(UHASH_MAX, 18446744073709551616). % hash max value (2^64)
+-define(UHASH_M,   2305843009213693951).  % largish prime (2^61)-1 < MAX
+-define(UHASH_MAX, 18446744073709551616). % hash max value (2^64)
 
 shingles(Str) ->
     shingles(Str, opts:shingle_size()).
@@ -65,61 +68,86 @@ merge([{K1,V1}=H1|T1]=L1,[{K2,V2}=H2|T2]=L2,Acc) ->
 	    end
     end.    
 
-remove_most_freq(ListOfLists) ->
-    MostFrequent = sets:from_list(calc_most_freq(ListOfLists)),
-    [ remove_most_freq_set(List, MostFrequent) || List <- ListOfLists ].
+%remove_most_freq(ListOfLists) ->
+%    MostFrequent = sets:from_list(calc_most_freq(ListOfLists)),
+%    [ remove_most_freq_set(List, MostFrequent) || List <- ListOfLists ].
 
-remove_most_freq_set(List, MostFreqSet) ->
-    sets:to_list(sets:subtract(sets:from_list(List), MostFreqSet)).
+%remove_most_freq_set(List, MostFreqSet) ->
+%    sets:to_list(sets:subtract(sets:from_list(List), MostFreqSet)).
 
-calc_most_freq(ListOfLists) ->
-    % [ [a,b,c], [a,b,e], [b,e,g] ]
-    Flattened = lists:flatten(ListOfLists),
-    % [ a,b,c,a,b,e,b,e,g ]
-    Freqs = lists:foldl(
-	      fun(E,Freq) -> dict:update_counter(E,1,Freq) end,
-	      dict:new(),
-	      Flattened
-	     ),    
-    FreqList = lists:reverse(lists:keysort(2,dict:to_list(Freqs))),
-    % [ {b,3},{a,2},{e,2},{c,1},{g,1} ]
-    Total = lists:sum([Count || {Term,Count} <- FreqList ]),
-    Cutoff = Total * 0.05,
-    io:format("T=~p C=~p\n",[Total,Cutoff]),
-    io:format("FreqList ~w\n",[FreqList]),
-    MostFreq = collect_head_until_cutoff(FreqList, Cutoff),
-    io:format("MostFreq ~w\n",[MostFreq]),
-    MostFreq.
+%calc_most_freq(ListOfLists) ->
+%    % [ [a,b,c], [a,b,e], [b,e,g] ]
+%    Flattened = lists:flatten(ListOfLists),
+%    % [ a,b,c,a,b,e,b,e,g ]
+%    Freqs = lists:foldl(
+%	      fun(E,Freq) -> dict:update_counter(E,1,Freq) end,
+%	      dict:new(),
+%	      Flattened
+%	     ),    
+%    FreqList = lists:reverse(lists:keysort(2,dict:to_list(Freqs))),
+%    % [ {b,3},{a,2},{e,2},{c,1},{g,1} ]
+%    Total = lists:sum([Count || {Term,Count} <- FreqList ]),
+%    Cutoff = Total * 0.05,
+%    io:format("T=~p C=~p\n",[Total,Cutoff]),
+%    io:format("FreqList ~w\n",[FreqList]),
+%    MostFreq = collect_head_until_cutoff(FreqList, Cutoff),
+%    io:format("MostFreq ~w\n",[MostFreq]),
+%    MostFreq.
 
-collect_head_until_cutoff(List, Cutoff) ->
-    collect_head_until_cutoff(List, Cutoff, [], nil).
+%collect_head_until_cutoff(List, Cutoff) ->
+%    collect_head_until_cutoff(List, Cutoff, [], nil).
 
-collect_head_until_cutoff([{Term,Freq}|T]=List, Cutoff, Acc, LastRemoved) ->
-    case Freq < Cutoff of
-	true ->  collect_head_until_cutoff(T, Cutoff - Freq, [Term|Acc], Freq);
-	false -> collect_head_while_equals(List, LastRemoved, Acc)
-    end.
+%collect_head_until_cutoff([{Term,Freq}|T]=List, Cutoff, Acc, LastRemoved) ->
+%    case Freq < Cutoff of
+%	true ->  collect_head_until_cutoff(T, Cutoff - Freq, [Term|Acc], Freq);
+%	false -> collect_head_while_equals(List, LastRemoved, Acc)
+%    end.
 
-collect_head_while_equals([{Term,Freq}|T]=List, FreqToRemove, Acc) ->
-    case Freq == FreqToRemove of
-	true  -> collect_head_while_equals(T,Freq,[Term|Acc]);
-	false -> Acc
-    end.
+%collect_head_while_equals([{Term,Freq}|T]=List, FreqToRemove, Acc) ->
+%    case Freq == FreqToRemove of
+%	true  -> collect_head_while_equals(T,Freq,[Term|Acc]);
+%	false -> Acc
+%    end.
 	     
-test() ->
-    Stdin = read_stdin([]),
-    Shingles = [ util:shingles(S,3) || S <- Stdin],
-    io:format("START ~w\n",[Shingles]),
-    MostFreqRemoved = remove_most_freq(Shingles),
-    io:format("END ~w\n",[MostFreqRemoved]).
-    
-read_stdin(Acc) ->
+slurp_stdin() ->    
+    IdentityFn = fun(L) -> L end,
+    slurp_stdin(IdentityFn).
+
+slurp_stdin(Fn) ->
+    slurp_stdin(Fn,[]).
+
+slurp_stdin(Fn,Acc) ->
     case io:get_line('') of 
 	eof ->  lists:reverse(Acc);
-	Line -> read_stdin([chomp(Line)|Acc])
+	Line -> slurp_stdin(Fn,[Fn(chomp(Line))|Acc])
     end.
 	
 chomp(S) -> 
     string:substr(S,1,length(S)-1).
      
+ensure_output_dir_created() ->
+    os:cmd("mkdir "++file_util:output_dir()).
+
+distribute_over_N_files(List,N) ->
+    write_to_file(0,distribute_over_N_lists(List,N)).
+
+write_to_file(_N,[]) ->
+    done;
+
+write_to_file(N, [H|T]) ->
+    file_util:write(file_util:output_dir()++"/"++integer_to_list(N), H),
+    write_to_file(N+1,T).
+
+distribute_over_N_lists(List,N) ->
+    EmptyLists = lists:duplicate(N,[]),
+    distribute_over_N_lists(List,EmptyLists,[]).
+
+distribute_over_N_lists([],ToFill,Filled) ->
+    ToFill ++ Filled;
+
+distribute_over_N_lists(List,[],Filled) ->
+    distribute_over_N_lists(List,Filled,[]);
+
+distribute_over_N_lists([H|T],[LH|LT],Filled) ->
+    distribute_over_N_lists(T, LT, [[H|LH]|Filled]).
 

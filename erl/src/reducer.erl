@@ -1,14 +1,20 @@
 -module(reducer).
--compile(export_all).
+-export([start_fn/0,reduce/2]).
+%-compile(export_all).
 
-start(InputFile,OutputFile) ->
-    spawn(?MODULE,reduce,[InputFile,OutputFile]).
+start_fn() ->
+    NewWorkerFn = 
+	fun(InFile,OutFile) ->
+		spawn(?MODULE,reduce,[InFile,OutFile])
+	end,
+    NewWorkerFn.
 
 reduce(InputFile,OutputFile) ->
     KVList = file_util:read(InputFile),
     Result = process(KVList),
+    ResultWithFreqOne = [ {KV,1} || KV <- Result ],
     % filter?
-    file_util:write(OutputFile,Result),
+    file_util:write(OutputFile,ResultWithFreqOne),
     receive
 	{ack,Pid} ->
 	    Pid ! {ack,self()}
@@ -35,5 +41,12 @@ all_pairs(_E,[],Acc) ->
     Acc;
 
 all_pairs(E,[H|T],Acc) ->
-    all_pairs(E,T,[{E,H}|Acc]).
+    all_pairs(E,T,[in_order({E,H})|Acc]).
+
+in_order({A,B}) ->
+    case A < B of
+	true  -> {A,B};
+	false -> {B,A}
+    end.
+	     
 
