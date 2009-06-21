@@ -109,8 +109,8 @@ parse_small_integer(_Data) ->
     { partial, nil, nil }.
 
 
-parse_integer(<<B1,B2,B3,B4, Data/binary>>) ->
-    { ok, <<98,B1,B2,B3,B4>>, Data };
+parse_integer(<<Size:4/binary, Data/binary>>) ->
+    { ok, <<98,Size/binary>>, Data };
 
 parse_integer(_Data) ->
     { partial, nil, nil }.
@@ -147,9 +147,9 @@ parse_string(_Data) ->
     { partial, nil, nil }.
 
 
-parse_list(<<L1,L2,L3,L4, Data/binary>>) ->
-    Len = L1 * (256*256*256) + L2 * (256*256) + L3 * 256 + L4,
-    Parsed = parse_elements(Len, Data, [<<L1,L2,L3,L4>>]),
+parse_list(<<Size:4/binary, Data/binary>>) ->
+    Len = parse_4_byte_size(Size), %L1 * (256*256*256) + L2 * (256*256) + L3 * 256 + L4,
+    Parsed = parse_elements(Len, Data, [<<Size/binary>>]),
     {Result, Elements, Data2 } = Parsed,
     case Result of
 	ok ->
@@ -190,5 +190,5 @@ parse_elements(N, <<Tag, Data/binary>>, Acc) ->
 	_       -> Parsed
     end.
 		   
-    
-    
+parse_4_byte_size(<<L1,L2,L3,L4>>) ->    
+    L1 * (256*256*256) + L2 * (256*256) + L3 * 256 + L4.
