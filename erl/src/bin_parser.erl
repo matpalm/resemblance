@@ -165,16 +165,14 @@ parse_list(_Data) ->
     { partial, nil, nil }.
 
 
-
-accum_binary(0, Data, Acc) ->
-    { ok, Acc, Data };
-
-accum_binary(_Len, <<>>, _Acc) ->
-    { partial, nil, nil };
- 
-accum_binary(Len, <<B, Data/binary>>, Acc) -> % todo: might be faster to accum to a list and call list_to_binary at end?
-    accum_binary(Len-1, Data, <<Acc/binary, B>>).
-
+accum_binary(N, Data, Acc) ->
+    case size(Data) < N of
+	true  -> 
+	    { partial, nil, nil };
+	false -> 
+	    <<Match:N/binary, Data2/binary>> = Data,
+	    { ok, <<Acc/binary, Match/binary>>, Data2 }
+    end.
 
 parse_elements(0, Data, Acc) ->
     { ok, list_to_binary(lists:reverse(Acc)), Data };
