@@ -2,7 +2,7 @@
 -compile(export_all).
 
 main() ->
-    util:ensure_output_dir_created(),
+    file_util:ensure_output_dir_created(),
     NumFiles = opts:num_mappers(),
     ParseFn = fun(L) -> parse_line(L) end,
     Data = util:slurp_stdin(ParseFn),

@@ -7,6 +7,9 @@ small_int_test() ->
 int_test() -> 
     test_single_term(300).
 
+small_big_test() ->
+    test_single_term(6898375242683851459).
+
 tuple_test() ->
     [ test_single_term({}),
       test_single_term({1}),
@@ -42,6 +45,20 @@ partial_int_test() ->
       test_partial(<<131,98,0,0>>),
       test_partial(<<131,98,0,0,0>>)
       ]. 
+
+partial_small_big_test() ->
+    [ 
+      test_partial(<<131,110>>),
+      test_partial(<<131,110,8>>),
+      test_partial(<<131,110,8,0>>),
+      test_partial(<<131,110,8,0,195>>),
+      test_partial(<<131,110,8,0,195,34>>),
+      test_partial(<<131,110,8,0,195,34,133>>),
+      test_partial(<<131,110,8,0,195,34,133,235>>),
+      test_partial(<<131,110,8,0,195,34,133,235,187>>),
+      test_partial(<<131,110,8,0,195,34,133,235,187,243>>),
+      test_partial(<<131,110,8,0,195,34,133,235,187,243,187>>)
+     ].
 
 partial_atom_test() ->
     [ test_partial(<<131,100>>),
@@ -85,7 +102,7 @@ partial_list_test() ->
 random_test() ->
     [ 
 %      {ok,[{{3,5},[1,1,1,1,1,1,1]}],<<>>} = bin_parser:parse_binary(<<16#83,16#6c,16#00,16#00,16#00,16#01,16#68,16#02,16#68,16#02,16#61,16#03,16#61,16#05,16#6b,16#00,16#07,16#01,16#01,16#01,16#01,16#01,16#01,16#01,16#6a>>),
-      test_single_term({6898375242683851459,10})
+%      test_single_term({6898375242683851459,10})
       ]. 
 %% utility
 

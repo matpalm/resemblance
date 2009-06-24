@@ -1,7 +1,7 @@
 -module(bin_parser).
-%-compile(export_all).
--export([read_file_as_list/1, open_file/1, parse/1, parse/2, parse_binary/1]).
--define(BUFFER_READ_SIZE, 4096).
+-export([read_file_as_list/1, foreach/2, 
+	 open_file/1, parse/1, parse/2, parse_binary/1]).
+-define(BUFFER_READ_SIZE, 10).
 
 %-----------------------
 % public api
@@ -36,6 +36,21 @@ slurp(F, PartialData, Acc) ->
 	Other -> Other
     end.	     
 
+foreach(Filename, Fun) ->
+    F = open_file(Filename),
+    apply_to_each(F, <<>>, Fun).
+
+apply_to_each(F, PartialData, Fun) -> 
+    Next = parse(F, PartialData),
+    case Next of
+	eof -> 
+	    done;
+	{ ok, Term, Continuation } -> 
+	    Fun(Term),
+	    apply_to_each(F, Continuation, Fun);
+	Other -> 
+	    Other
+    end.	     
 
 %-----------------------
 % internals
@@ -99,6 +114,8 @@ start_term(104,Data) -> parse_small_tuple(Data);
 start_term(106,Data) -> {ok, <<106>>, Data}; % empty list
 start_term(107,Data) -> parse_string(Data);
 start_term(108,Data) -> parse_list(Data);
+start_term(110,Data) -> parse_small_big(Data);
+start_term(111,Data) -> parse_large_big(Data);
 start_term(Tag, Data) -> { error, {unknown_type, Tag}, Data}.
 
 
@@ -109,8 +126,8 @@ parse_small_integer(_Data) ->
     { partial, nil, nil }.
 
 
-parse_integer(<<Size:4/binary, Data/binary>>) ->
-    { ok, <<98,Size/binary>>, Data };
+parse_integer(<<Length:4/binary, Data/binary>>) ->
+    { ok, <<98,Length/binary>>, Data };
 
 parse_integer(_Data) ->
     { partial, nil, nil }.
@@ -127,7 +144,6 @@ parse_atom(_Data) ->
 
 parse_small_tuple(<<Arity, Data/binary>>) ->
     Parsed = parse_elements(Arity, Data, [<<Arity>>]),
-%    io:format("G ~w\n",[Parsed]),
     {Result, Elements, Data2 } = Parsed,
     case Result of 
 	ok      -> { ok, <<104, Elements/binary>>, Data2 };
@@ -138,7 +154,6 @@ parse_small_tuple(<<Arity, Data/binary>>) ->
 parse_small_tuple(_Data) ->
     { partial, nil, nil }.
 
-
 parse_string(<<0, Len, Data/binary>>) ->
     AccSeed = <<107,0,Len>>,
     accum_binary(Len, Data, AccSeed);
@@ -147,14 +162,18 @@ parse_string(_Data) ->
     { partial, nil, nil }.
 
 
-parse_list(<<Size:4/binary, Data/binary>>) ->
-    Len = parse_4_byte_size(Size), %L1 * (256*256*256) + L2 * (256*256) + L3 * 256 + L4,
-    Parsed = parse_elements(Len, Data, [<<Size/binary>>]),
+parse_list(<<LengthBinary:4/binary, Data/binary>>) ->
+    Len = parse_4_byte_size(LengthBinary), %L1 * (256*256*256) + L2 * (256*256) + L3 * 256 + L4,
+    Parsed = parse_elements(Len, Data, [<<LengthBinary/binary>>]),
     {Result, Elements, Data2 } = Parsed,
     case Result of
 	ok ->
-	    << 106, Data3/binary >> = Data2, % ignore improper lists?? see spec
-	    { ok, <<108, Elements/binary, 106>>, Data3 };
+	    case Data2 of 
+		<< 106, Data3/binary >> ->
+		    { ok, <<108, Elements/binary, 106>>, Data3 };
+		_ ->
+		    { partial, nil, nil }
+	    end;
 	partial ->
 	    { partial, nil, nil };
 	_ ->
@@ -162,6 +181,21 @@ parse_list(<<Size:4/binary, Data/binary>>) ->
     end;
 
 parse_list(_Data) ->
+    { partial, nil, nil }.
+
+parse_small_big(<<Len, Sign, Data/binary>>) ->
+    AccSeed = <<110,Len,Sign>>,
+    accum_binary(Len, Data, AccSeed);
+
+parse_small_big(_Data) ->
+    { partial, nil, nil }.
+
+
+parse_large_big(<<Len:4/binary, Sign, Data/binary>>) ->
+    AccSeed = <<111, Len/binary, Sign>>,
+    accum_binary(Len, Data, AccSeed);
+
+parse_large_big(_Data) ->
     { partial, nil, nil }.
 
 
@@ -182,7 +216,6 @@ parse_elements(_N, <<>>, _Acc) ->
 
 parse_elements(N, <<Tag, Data/binary>>, Acc) ->
     Parsed = start_term(Tag, Data),
-%io:format("F ~p\n",[Parsed]),
     { Result, ElementData, Data2 } = Parsed,
      case Result of 
 	ok      -> parse_elements(N-1, Data2, [ElementData|Acc]);

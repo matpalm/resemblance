@@ -1,9 +1,8 @@
 -module(util).
--export([ shingles/1, shingles/2, uhash/2, uhash_seed/1, ack/1, merge/2, 
+-export([ shingles/1, shingles/2, uhash/2, uhash_seed/1, merge/2, 
+	  ack/1, ack_response/0,
 	  distribute_over_N_lists/2, distribute_over_N_files/2,
-	  ensure_output_dir_created/0,
 	  slurp_stdin/0, slurp_stdin/1]).
-%-compile(export_all).
 
 %-define(UHASH_M,   1234). % largish prime < MAX
 %-define(UHASH_MAX, 23424). % hash max value (2^32)
@@ -44,6 +43,12 @@ ack(Pids) when is_list(Pids) ->
 ack(Pid) ->
     Pid ! { ack, self() },
     receive { ack, Pid } -> ok end.    
+
+ack_response() ->
+    receive
+	{ack,Pid} ->
+	    Pid ! {ack,self()}
+    end.
 
 merge(L1,L2) ->
     merge(L1,L2,[]).
@@ -125,9 +130,6 @@ slurp_stdin(Fn,Acc) ->
 chomp(S) -> 
     string:substr(S,1,length(S)-1).
      
-ensure_output_dir_created() ->
-    os:cmd("mkdir "++file_util:output_dir()).
-
 distribute_over_N_files(List,N) ->
     write_to_file(0,distribute_over_N_lists(List,N)).
 
@@ -135,7 +137,7 @@ write_to_file(_N,[]) ->
     done;
 
 write_to_file(N, [H|T]) ->
-    file_util:write(file_util:output_dir()++"/"++integer_to_list(N), H),
+    file_util:write(file_util:output_dir()++"/"++integer_to_list(N)++".gz", H),
     write_to_file(N+1,T).
 
 distribute_over_N_lists(List,N) ->

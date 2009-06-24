@@ -1,1 +1,1 @@
-erl -noshell -pa ebin -s file_util cat -s init stop -input_files $* 
+erl -noshell -pa ebin -s file_util cat $* 

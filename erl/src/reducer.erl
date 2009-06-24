@@ -1,6 +1,5 @@
 -module(reducer).
 -export([start_fn/0,reduce/2]).
-%-compile(export_all).
 
 start_fn() ->
     NewWorkerFn = 
@@ -13,12 +12,8 @@ reduce(InputFile,OutputFile) ->
     KVList = file_util:read(InputFile),
     Result = process(KVList),
     ResultWithFreqOne = [ {KV,1} || KV <- Result ],
-    % filter?
     file_util:write(OutputFile,ResultWithFreqOne),
-    receive
-	{ack,Pid} ->
-	    Pid ! {ack,self()}
-    end.
+    map_reduce:worker_done().
 
 process(KVList) ->
     process(KVList,[]).

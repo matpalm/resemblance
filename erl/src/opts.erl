@@ -4,6 +4,9 @@
 num_mappers() ->
     int_prop(num_mappers,4).
 
+task() ->
+    atom_prop(task).
+
 %num_reducers() ->
 %    int_prop(num_reducers,4).
 
@@ -28,5 +31,12 @@ int_prop(Flag, Dft) ->
 	error -> Dft;
         {ok,V} -> list_to_integer(hd(hd(V)))
     end.
-		       
+
+atom_prop(Flag) ->		       
+    Value = init:get_argument(Flag),
+    case Value of
+        {ok,V} -> list_to_atom(hd(hd(V)));
+	_ -> Value
+    end.
+    
 	     
