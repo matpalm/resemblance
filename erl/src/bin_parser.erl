@@ -8,8 +8,10 @@
 
 % open file handle for passing to parse_file 
 open_file(Filename) ->
-    {ok,F} = file:open(Filename,[read,binary,raw,compressed]),
-    F.
+    case file:open(Filename,[read,binary,raw,compressed]) of
+	{ ok,F } -> F;
+	E -> io:format("error opening ~p (?) ~p\n",[Filename,E])
+    end.
 
 % parse
 % returns either

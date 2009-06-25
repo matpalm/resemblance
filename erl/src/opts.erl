@@ -2,7 +2,7 @@
 -compile(export_all).
 
 num_mappers() ->
-    int_prop(num_mappers,4).
+    int_prop(num_mappers,6).
 
 task() ->
     atom_prop(task).

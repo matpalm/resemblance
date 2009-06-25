@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
+exit 1
 set -x
-rm -rf mr_*
+rm -rf mr_* *vm
 
 # prepare data by spreading if over N files
+vmstat 1 > mr_prepared.vm &
 time head -n $1 ../name_addr | erl -noshell -pa ebin -s prepare main -output_dir mr_prepared
+killall vmstat
 
 # for each line of input emit sketch values for each shingle { SketchValue, DocId }
 time erl -noshell -pa ebin -s map_reduce -task sketch_mapper -input_dir mr_prepared -output_dir mr_mapped

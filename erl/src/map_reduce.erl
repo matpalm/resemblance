@@ -4,26 +4,48 @@
 
 start() ->
     MapModule = opts:task(),
-    StartFn = apply(MapModule,start_fn,[]),
+    put(start_fn, apply(MapModule,start_fn,[])),
     Files = file_util:input_files(),
+    NumWorkers = opts:num_mappers(),
     file_util:ensure_output_dir_created(),
-    Workers = start_workers(Files,StartFn),
-    %TODO: should make a max, say 4, workers and then start a new one per completion ack
-    util:ack(Workers),
+    case length(Files) < NumWorkers of
+	true ->
+	    start_workers(Files),     
+	    acks(length(Files));
+	false ->
+	    { Initial, Remaining } = lists:split(NumWorkers, Files),
+	    start_workers(Initial),
+	    start_worker_for_each_completion(Remaining),
+	    acks(NumWorkers)
+    end,
     init:stop().
 
-start_workers(Files,NewWorkerFn) ->
-    start_workers(Files,[],NewWorkerFn).
+start_workers(Files) ->
+    d("start for files ~p\n",[Files]),
+    lists:foreach(fun(F) -> start_worker(F) end, Files).
 
-start_workers([],Pids,_Seeds) ->
-    Pids;
+start_worker_for_each_completion([]) ->
+    done;
 
-start_workers([File|Files],Pids,NewWorkerFn) ->
+start_worker_for_each_completion([File|Files]) ->
+    d("start for file ~p, num files remaining ~p\n",[File,length(Files)]),
+    receive_an_ack(),
+    start_worker(File),
+    start_worker_for_each_completion(Files).
+
+start_worker(File) ->
+    d("start worker ~p\n",[File]),
     InFile = file_util:input_dir()++"/"++File, 
     OutFile = file_util:output_dir()++"/"++File,
-io:format("worker infile ~p outfile ~p\n",[InFile,OutFile]),
-    Pid = NewWorkerFn(InFile,OutFile),
-    start_workers(Files,[Pid|Pids],NewWorkerFn).
+    NewWorkerFn = get(start_fn),
+    Pid = NewWorkerFn(InFile, OutFile),
+    Pid ! { ack, self() }.
+
+acks(N) ->
+    lists:foreach(fun(_) -> receive_an_ack() end, lists:seq(1,N)).
+
+receive_an_ack() ->
+    receive { ack, _ } -> ok end.    
 
 % common worker functions
 worker_done() ->
