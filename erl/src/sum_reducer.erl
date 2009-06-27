@@ -1,24 +1,28 @@
 -module(sum_reducer).
--export([start_fn/0,reduce/2]).
+-export([initial_state/0,process/3,finished/2]).
 
-start_fn() ->
-    NewWorkerFn = 
-	fun(InFile,OutFile) ->
-		spawn(?MODULE,reduce,[InFile,OutFile])
-	end,
-    NewWorkerFn.
+initial_state() ->
+    nil.
 
-reduce(InputFile,OutputFile) ->
-    KVList = file_util:read(InputFile),
-    Result = [ {lists:sum(Values),K} || {K,Values} <- KVList ],
-    ResultFiltered = filter_if_required(Result),
-    file_util:write(OutputFile,ResultFiltered),
-    map_reduce:worker_done().
+process({Key,Values}, _State, EmitFn) ->
+    Sum = lists:sum(Values),
+    case should_emit(Sum) of
+	true ->
+	    EmitFn({Key,Sum});
+	false ->
+	    nothing
+    end,
+    nil.
 
-filter_if_required(List) ->
+finished(_,_) ->
+    nil.
+
+should_emit(Sum) ->
     case opts:int_prop(min_sum, -1) of
-	-1 -> List; % no filter
-	N  -> lists:filter(fun({Sum,_Pair}) -> Sum > N end, List)
+	-1 -> 
+	    true; % no filter, always emit
+	N  -> 
+	    Sum > N
     end.
 	     
 

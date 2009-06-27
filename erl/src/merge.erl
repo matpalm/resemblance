@@ -57,10 +57,10 @@ open_files_and_merge(Partition,Files) ->
 
     io:format("InFilenames ~p OutFilename ~p\n",[InFilenames, OutFilename]),
 
-    Ins = [ bin_parser:open_file(File) || File <- InFilenames ],
-    Out = file_util:open_file_for_write(OutFilename),
+    Ins = [ bin_parser:open_file_for_read(File) || File <- InFilenames ],
+    Out = bin_parser:open_file_for_write(OutFilename),
 
-    FirstReadOfIns = [ read_from_in(In,<<>>) || In <- Ins ],
+    FirstReadOfIns = [ read_from_in(In) || In <- Ins ],
     IgnoringEmptyFiles = lists:filter(fun(X) -> X /= eof end, FirstReadOfIns),
     merge(Out, IgnoringEmptyFiles),
 
@@ -71,11 +71,11 @@ open_files_and_merge(Partition,Files) ->
     
     util:ack_response().
     
-read_from_in(In,C) ->
-    Res = bin_parser:parse(In,C),
+read_from_in(In) ->
+    Res = bin_parser:read(In),
     case Res of 
 	eof -> eof;
-	{ok,{K,Vs},C2} -> {K,Vs,C2,In}
+	{ok,{K,Vs}} -> {K,Vs,In}
     end.     
 
 merge(_Out,[]) ->
@@ -83,9 +83,9 @@ merge(_Out,[]) ->
 
 % OutHandle, [{K,VList,Continuation,InHandle}, {K,Vlist,InHandle}]
 merge(Out,Ins) ->
-    MinKey = lists:min([ K || {K,_,_,_} <- Ins ]),
+    MinKey = lists:min([ K || {K,_,_} <- Ins ]),
     { Ins2, MatchingKVlists } = pop_key_vlists_matching(MinKey, Ins),
-    file:write(Out, term_to_binary({ MinKey, lists:flatten(MatchingKVlists) })),
+    bin_parser:write(Out, { MinKey, lists:flatten(MatchingKVlists) }),
     merge(Out,Ins2).
 
 pop_key_vlists_matching(MinKey, Ins) ->
@@ -94,13 +94,13 @@ pop_key_vlists_matching(MinKey, Ins) ->
 pop_key_vlists_matching(_MinKey, [], AccIns, AccVLists) ->
     { AccIns, AccVLists };
 
-pop_key_vlists_matching(MinKey, [{K,VList,Continuation,InHandle}=In|Ins], AccIns, AccVLists) ->
+pop_key_vlists_matching(MinKey, [{K,VList,InHandle}=In|Ins], AccIns, AccVLists) ->
     case MinKey == K of
 	false ->
 	    pop_key_vlists_matching(MinKey, Ins, [In|AccIns], AccVLists);
 	true ->
 	    AccVLists2 = [ VList | AccVLists],
-	    In2 = read_from_in(InHandle, Continuation),
+	    In2 = read_from_in(InHandle),
 	    case In2 of
 		eof -> 	    
 		    pop_key_vlists_matching(MinKey, Ins, AccIns, AccVLists2);

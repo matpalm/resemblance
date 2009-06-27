@@ -1,8 +1,8 @@
 -module(opts).
 -compile(export_all).
 
-num_mappers() ->
-    int_prop(num_mappers,6).
+num_workers() ->
+    int_prop(num_workers,6).
 
 task() ->
     atom_prop(task).

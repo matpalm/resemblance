@@ -20,12 +20,12 @@ open_partition_file_handles(OutFilename) ->
     file_util:ensure_output_dir_created(),
     Filenames = partition_filenames(OutFilename),
     io:format("Filename ~p\n",[Filenames]),
-    [ file_util:open_file_for_write(Filename) || Filename <- Filenames ].
+    [ bin_parser:open_file_for_write(Filename) || Filename <- Filenames ].
 
 partition_filenames(OutFilename) ->
     OutFilenameWithoutGz = trim_trailing_gz(OutFilename),
     [ OutFilenameWithoutGz ++".p"++integer_to_list(ON-1)++".gz"
-      || ON <- lists:seq(1,opts:num_mappers()) ].
+      || ON <- lists:seq(1,opts:int_prop(num_partitions,10)) ].
    
 trim_trailing_gz(Filename) ->
     io:format("Filename ~p\n",[Filename]),
@@ -34,23 +34,23 @@ trim_trailing_gz(Filename) ->
     hd(Split).
 
 read_and_partition(Filename, PartitionOutputFiles) ->
-    F = bin_parser:open_file(Filename),
-    read_term_and_partition(F, <<>>, PartitionOutputFiles).
+    F = bin_parser:open_file_for_read(Filename),
+    read_term_and_partition(F, PartitionOutputFiles).
 
-read_term_and_partition(F, C, PartitionOutputFiles) ->
-    Parsed = bin_parser:parse(F, C),
+read_term_and_partition(F, PartitionOutputFiles) ->
+    Parsed = bin_parser:read(F),
     case Parsed of
 	eof -> 
 	    done;
-	{ok,KV,C2} -> 
+	{ok,KV} -> 
 	    send_to_partition(KV, PartitionOutputFiles),
-	    read_term_and_partition(F, C2, PartitionOutputFiles)
+	    read_term_and_partition(F, PartitionOutputFiles)
     end.
 
 send_to_partition({Key,_Value}=KeyValue, PartitionOutputFiles) ->
     Idx = (erlang:phash2(Key) rem length(PartitionOutputFiles)) + 1,
     FH = lists:nth(Idx, PartitionOutputFiles),
-    file:write(FH, term_to_binary(KeyValue)).
+    bin_parser:write(FH, KeyValue).
 
 close_all_files(Files) ->
     lists:foreach(fun(F) -> file:close(F) end, Files).

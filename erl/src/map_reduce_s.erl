@@ -1,10 +1,8 @@
--module(map_reduce).
+-module(map_reduce_s).
 -compile(export_all).
 -include("debug.hrl").
 
 start() ->
-    MapModule = opts:task(),
-    put(start_fn, apply(MapModule,start_fn,[])),
     Files = file_util:input_files(),
     NumWorkers = opts:num_workers(),
     file_util:ensure_output_dir_created(),
@@ -35,10 +33,7 @@ start_worker_for_each_completion([File|Files]) ->
 
 start_worker(File) ->
     d("start worker ~p\n",[File]),
-    InFile = file_util:input_dir()++"/"++File, 
-    OutFile = file_util:output_dir()++"/"++File,
-    NewWorkerFn = get(start_fn),
-    Pid = NewWorkerFn(InFile, OutFile),
+    Pid = spawn(?MODULE, worker, [File,opts:task()]),
     Pid ! { ack, self() }.
 
 acks(N) ->
@@ -47,9 +42,36 @@ acks(N) ->
 receive_an_ack() ->
     receive { ack, _ } -> ok end.    
 
+
+worker(File,Module) ->
+    In = bin_parser:open_file_for_read(file_util:input_dir()++"/"++File),
+    InitialState = apply(Module,initial_state,[]),
+    Out = bin_parser:open_file_for_write(file_util:output_dir()++"/"++File),
+    EmitFn = fun(X) -> 
+		     bin_parser:write(Out,X) 
+	     end,
+    process(In, Module, InitialState, EmitFn),    
+    file:close(In),
+    file:close(Out),
+    util:ack_response().
+
+process(In, Module, State, EmitFn) ->
+    Read = bin_parser:read(In),
+    case Read of
+	{ok,Term} ->
+	    State2 = apply(Module, process, [Term, State, EmitFn]),
+	    process(In, Module, State2, EmitFn);
+	eof ->
+	    apply(Module, finished, [State, EmitFn]);
+	_ ->
+	    d("other? ~p\n",[Read]),
+	    Read
+    end.
+
+
 % common worker functions
-worker_done() ->
-    util:ack_response(). % todo: make workers use this directly
+%worker_done() ->
+%    util:ack_response(). % todo: make workers use this directly
 
    
 

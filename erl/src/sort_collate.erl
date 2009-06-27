@@ -1,20 +1,19 @@
 -module(sort_collate).
--export([start_fn/0,read_sort_collate/2]).
+-export([initial_state/0, process/3, finished/2]).
 -include("debug.hrl").
 
-start_fn() ->
-    NewWorkerFn = 
-	fun(InFile,OutFile) ->
-		spawn(?MODULE,read_sort_collate,[InFile,OutFile])
-	end,
-    NewWorkerFn.
+initial_state() ->
+    [].
 
-read_sort_collate(InFile,OutFile) ->
-    KVList = bin_parser:read_file_as_list(InFile),
+process(Term, Acc, _EmitFn) ->
+    [Term|Acc].
+
+finished(KVList, EmitFn) ->
     Collated = collect_values_for_key(lists:sort(KVList)),
-    %Filtered = filter(Collated),
-    file_util:write(OutFile, Collated),
-    map_reduce:worker_done().
+    lists:foreach(
+      fun(T) -> EmitFn(T) end, 
+      Collated
+     ).
 
 % assume input sorted ??
 % in  [ {k1,v1}, {k1,v2}, {k2,v1} ]

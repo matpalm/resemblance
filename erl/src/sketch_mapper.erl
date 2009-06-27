@@ -1,34 +1,22 @@
 -module(sketch_mapper).
--export([start_fn/0,map/3]).
+-export([initial_state/0,process/3,finished/2]).
 -include("debug.hrl").
 
-start_fn() ->
-    Seeds = [ util:uhash_seed(opts:shingle_size()) 
-	      || _ <- lists:seq(1,opts:sketch_size()) ],    
-    NewWorkerFn = 
-	fun(InFile,OutFile) ->
-		spawn(?MODULE,map,[InFile,OutFile,Seeds])
-	end,
-    NewWorkerFn.
+initial_state() ->
+    [ util:uhash_seed(opts:shingle_size()) 
+	      || _ <- lists:seq(1,opts:sketch_size()) ].
 
-map(InputFile,OutputFile,Seeds) ->
-    Lines = file_util:read(InputFile),
-    Result = process(Lines,Seeds),
-    file_util:write(OutputFile,Result),
-    map_reduce:worker_done().
-
-process(Lines,Seeds) ->
-    process(Lines,Seeds,[]).
-
-process([],_Seeds,Acc) ->
-    Acc;
-
-process([{Id,Content}|Lines],Seeds,Acc) ->
+process({Id,Content}, Seeds, EmitFn) ->
     Shingles = util:shingles(Content),
     Sketches = shingles_to_sketches(Seeds, Shingles), 
-    SketchesId = [ {Sketch,Id} || Sketch <- Sketches],
-    Acc2 = lists:merge(Acc,SketchesId),
-    process(Lines,Seeds,Acc2).
+    lists:foreach(fun(Sketch) -> EmitFn({Sketch,Id}) end, Sketches),
+    Seeds;
+
+process(X,_,_) ->
+    io:format("unexpected process ~p\n",[X]).
+
+finished(_,_) ->
+     done.
 
 shingles_to_sketches(Seeds, Shingles) ->
     shingles_to_sketches(Seeds, Shingles, []).

@@ -1,44 +1,33 @@
 -module(reducer).
--export([start_fn/0,reduce/2]).
+-export([initial_state/0,process/3,finished/2]).
 
-start_fn() ->
-    NewWorkerFn = 
-	fun(InFile,OutFile) ->
-		spawn(?MODULE,reduce,[InFile,OutFile])
-	end,
-    NewWorkerFn.
+initial_state() ->
+    nil.
 
-reduce(InputFile,OutputFile) ->
-    KVList = file_util:read(InputFile),
-    Result = process(KVList),
-    ResultWithFreqOne = [ {KV,1} || KV <- Result ],
-    file_util:write(OutputFile,ResultWithFreqOne),
-    map_reduce:worker_done().
+process({_Key,VList}, _State, EmitFn) ->
+    combos(VList, EmitFn),
+    nil.
 
-process(KVList) ->
-    process(KVList,[]).
+finished(_,_) ->
+    nil.
 
-process([],Acc) ->
-    Acc;
+combos(List,_) when length(List) < 2 ->
+    done;
 
-process([{_K,VList}|T], Acc) ->
-    Acc2 = combos(VList,Acc),
-    process(T,Acc2).
+combos([H|T],EmitFn) ->
+    all_pairs(H,T,EmitFn),
+    combos(T, EmitFn).
 
-combos([],Acc) ->
-    Acc;
+all_pairs(_E,[],_EmitFn) ->
+    done;
 
-combos([H|T],Acc) ->
-    Pairs = all_pairs(H,T,[]),
-    combos(T,lists:append(Pairs,Acc)).
+all_pairs(E,[H|T],EmitFn) ->
+    PairInOrder = in_order(E,H),
+    EmitFn({PairInOrder,1}),
+    all_pairs(E,T,EmitFn).
 
-all_pairs(_E,[],Acc) ->
-    Acc;
 
-all_pairs(E,[H|T],Acc) ->
-    all_pairs(E,T,[in_order({E,H})|Acc]).
-
-in_order({A,B}) ->
+in_order(A,B) ->
     case A < B of
 	true  -> {A,B};
 	false -> {B,A}
