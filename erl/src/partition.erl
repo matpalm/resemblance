@@ -23,16 +23,9 @@ open_partition_file_handles(OutFilename) ->
     [ bin_parser:open_file_for_write(Filename) || Filename <- Filenames ].
 
 partition_filenames(OutFilename) ->
-    OutFilenameWithoutGz = trim_trailing_gz(OutFilename),
-    [ OutFilenameWithoutGz ++".p"++integer_to_list(ON-1)++".gz"
+    [ OutFilename ++".p"++integer_to_list(ON-1)
       || ON <- lists:seq(1,opts:int_prop(num_partitions,10)) ].
    
-trim_trailing_gz(Filename) ->
-    io:format("Filename ~p\n",[Filename]),
-    Split = re:split(Filename,"(.gz$)",[{return,list}]),
-    3 = length(Split), % assert
-    hd(Split).
-
 read_and_partition(Filename, PartitionOutputFiles) ->
     F = bin_parser:open_file_for_read(Filename),
     read_term_and_partition(F, PartitionOutputFiles).

@@ -13,7 +13,7 @@ open_file_for_read(Filename) ->
     end.
 
 open_file_for_write(Filename) ->
-    {ok,F} = file:open(Filename, [write,{delayed_write,?WRITE_BUFFER_SIZE,60000},compressed]),
+    {ok,F} = file:open(Filename, [write,{delayed_write,?WRITE_BUFFER_SIZE,60000},raw,compressed]),
     F.
 
 write(F, Term) ->

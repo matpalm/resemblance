@@ -10,7 +10,7 @@ start() ->
 open_files() ->
     file_util:ensure_output_dir_created(),
     NumFiles = opts:int_prop(num_files,10),
-    Filenames = [ file_util:output_dir()++"/"++integer_to_list(N)++".gz"
+    Filenames = [ file_util:output_dir()++"/"++integer_to_list(N)
 		  || N <- lists:seq(1,NumFiles)],
     [ bin_parser:open_file_for_write(Filename) 
       || Filename <- Filenames ].

@@ -53,7 +53,7 @@ start_workers([{Partition,Files}|PartitionToFiles], Pids) ->
 
 open_files_and_merge(Partition,Files) ->
     InFilenames = [ file_util:input_dir()++"/"++File || File <- Files ],
-    OutFilename = file_util:output_dir()++"/"++Partition++".gz",
+    OutFilename = file_util:output_dir()++"/"++Partition,
 
     io:format("InFilenames ~p OutFilename ~p\n",[InFilenames, OutFilename]),
 

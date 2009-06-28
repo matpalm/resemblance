@@ -1,7 +1,6 @@
 -module(util).
 -export([ shingles/1, shingles/2, uhash/2, uhash_seed/1, merge/2, 
 	  ack/1, ack_response/0,
-	  distribute_over_N_lists/2, distribute_over_N_files/2,
 	  slurp_stdin/0, slurp_stdin/1]).
 
 % todo get rid of most of these above functions, who is calling them??
@@ -91,26 +90,4 @@ slurp_stdin(Fn,Acc) ->
 chomp(S) -> 
     string:substr(S,1,length(S)-1).
      
-distribute_over_N_files(List,N) ->
-    write_to_file(0,distribute_over_N_lists(List,N)).
-
-write_to_file(_N,[]) ->
-    done;
-
-write_to_file(N, [H|T]) ->
-    file_util:write(file_util:output_dir()++"/"++integer_to_list(N)++".gz", H),
-    write_to_file(N+1,T).
-
-distribute_over_N_lists(List,N) ->
-    EmptyLists = lists:duplicate(N,[]),
-    distribute_over_N_lists(List,EmptyLists,[]).
-
-distribute_over_N_lists([],ToFill,Filled) ->
-    ToFill ++ Filled;
-
-distribute_over_N_lists(List,[],Filled) ->
-    distribute_over_N_lists(List,Filled,[]);
-
-distribute_over_N_lists([H|T],[LH|LT],Filled) ->
-    distribute_over_N_lists(T, LT, [[H|LH]|Filled]).
 
