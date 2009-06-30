@@ -32,8 +32,9 @@ start_worker_for_each_completion([File|Files]) ->
     start_worker_for_each_completion(Files).
 
 start_worker(File) ->
-    d("start worker ~p\n",[File]),
-    Pid = spawn(?MODULE, worker, [File,opts:task()]),
+    InFile = file_util:input_dir()++"/"++File,
+    OutFile = file_util:output_dir()++"/"++File,
+    Pid = spawn(?MODULE, worker, [InFile,OutFile,opts:task()]),
     Pid ! { ack, self() }.
 
 acks(N) ->
@@ -43,10 +44,11 @@ receive_an_ack() ->
     receive { ack, _ } -> ok end.    
 
 
-worker(File,Module) ->
-    In = bin_parser:open_file_for_read(file_util:input_dir()++"/"++File),
+worker(InFile,OutFile,Module) ->
+    d("InFile=~p OutFile=~p\n",[InFile, OutFile]),
+    In = bin_parser:open_file_for_read(InFile),
+    Out = bin_parser:open_file_for_write(OutFile),
     InitialState = apply(Module,initial_state,[]),
-    Out = bin_parser:open_file_for_write(file_util:output_dir()++"/"++File),
     EmitFn = fun(X) -> 
 		     bin_parser:write(Out,X) 
 	     end,

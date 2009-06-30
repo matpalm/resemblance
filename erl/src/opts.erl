@@ -1,6 +1,9 @@
 -module(opts).
 -compile(export_all).
 
+override_prop(Key,Value) ->
+    put(Key,Value). 
+
 num_workers() ->
     int_prop(num_workers,6).
 
@@ -25,18 +28,38 @@ sketch_size() ->
 shingle_size() ->
     int_prop(shingle_size,10).
 
-int_prop(Flag, Dft) ->
-    Value = init:get_argument(Flag),
-    case Value of
-	error -> Dft;
-        {ok,V} -> list_to_integer(hd(hd(V)))
-    end.
 
-atom_prop(Flag) ->		       
-    Value = init:get_argument(Flag),
-    case Value of
-        {ok,V} -> list_to_atom(hd(hd(V)));
-	_ -> Value
+int_prop(Flag, Dft) ->
+    prop(Flag, fun(X) -> list_to_integer(X) end, Dft).
+
+atom_prop(Flag) ->
+    prop(Flag, fun(X) -> list_to_atom(X) end).    
+
+string_prop(Flag) ->
+    prop(Flag, fun(X) -> X end).
+
+string_prop(Flag, Dft) ->
+    prop(Flag, fun(X) -> X end, Dft).
+    
+prop(Flag, F) ->
+    prop(Flag, F, no_default).
+
+prop(Flag, F, Dft) ->
+    case get(Flag) of
+	undefined ->
+	    Value = init:get_argument(Flag),
+	    case Value of
+		error -> 
+		    case Dft of
+			no_default -> {no_command_line_set_for,Flag,and_no_dft_given,Value};
+			_ -> Dft
+		    end;
+		{ok,V} -> 
+		    F(hd(hd(V)))
+	    end;
+	Val -> 
+	    Val
     end.
     
+
 	     

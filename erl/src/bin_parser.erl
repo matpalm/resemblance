@@ -31,6 +31,7 @@ read(F) ->
 	EofOrErr -> EofOrErr 
     end.
 
+	     
 read_term(F, <<19,75,LengthBytes/binary>>) ->
     Length = bytes_to_size(LengthBytes),
     case file:read(F, Length) of 

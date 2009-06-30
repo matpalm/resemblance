@@ -41,20 +41,12 @@ start_workers([], Pids) ->
     Pids;
 
 start_workers([{Partition,Files}|PartitionToFiles], Pids) ->
-    Pid = spawn(?MODULE, open_files_and_merge, [Partition, Files]),
-    start_workers(PartitionToFiles, [Pid|Pids]).
-
-%merge_next([]) ->
-%    done;
-%
-%merge_next([{Partition,Files}|PartitionToFiles]) ->
-%    open_files_and_merge(Partition,Files),
-%    merge_next(PartitionToFiles).
-
-open_files_and_merge(Partition,Files) ->
     InFilenames = [ file_util:input_dir()++"/"++File || File <- Files ],
     OutFilename = file_util:output_dir()++"/"++Partition,
+    Pid = spawn(?MODULE, open_files_and_merge, [InFilenames, OutFilename]),
+    start_workers(PartitionToFiles, [Pid|Pids]).
 
+open_files_and_merge(InFilenames, OutFilename) ->
     io:format("InFilenames ~p OutFilename ~p\n",[InFilenames, OutFilename]),
 
     Ins = [ bin_parser:open_file_for_read(File) || File <- InFilenames ],

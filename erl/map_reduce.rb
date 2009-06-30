@@ -23,33 +23,48 @@ FILES = ARGV[1] || "10"
 msg = "NUM=#{NUM} FILES=#{FILES}"
 log msg
 
-run "head -n #{NUM} ../name_addr | erl -noshell -pa ebin -s prepare -num_files #{FILES} -output_dir mr/01_prepared"
+# prepare data
+# { doc_id, "text of document here" }
+run "head -n #{NUM} ../name_addr | perl -plne'tr/A-Z/a-z/' | erl -noshell -pa ebin -s prepare -num_files #{FILES} -output_dir mr/01_prepared"
 
-# for each line of input emit sketch values for each shingle { SketchValue, DocId }
-run "erl -noshell -pa ebin -s map_reduce_s -task sketch_mapper -input_dir mr/01_prepared -output_dir mr/02_mapped"
+# map to { doc_id, [shingles] } 
+run "erl -noshell -pa ebin -s map_reduce_s -task shingler -input_dir mr/01_prepared -output_dir mr/02_id_to_shingles"
+
+# determine most frequent shingles
+# output { shingle, freq } 
+run "erl -noshell -pa ebin -s map_reduce_s -task emit_values -input_dir mr/02_id_to_shingles -output_dir mr/02_2_shingle_to_1"
+run "erl -noshell -pa ebin -s shuffle -input_dir mr/02_2_shingle_to_1 -output_dir mr/02_3_shingle_to_1_shuffled"
+run "erl -noshell -pa ebin -s map_reduce_s -task sum -input_dir mr/02_3_shingle_to_1_shuffled -output_dir mr/02_4_shingle_freq"
+run "erl -noshell -pa ebin -s map_reduce_s -task top_N -num_to_keep 10 -input_dir mr/02_4_shingle_freq -output_dir mr/02_5_top_shingle_freq"
+run "erl -noshell -pa ebin -s reducer -task top_N -num_to_keep 10 -input_dir mr/02_5_top_shingle_freq -output_file mr/02_6_most_freq"
+
+# remove shingles that are in the most common set
+# input_files { doc_id, [shingles] } output_files { doc_id, [shingles] }
+run "erl -noshell -pa ebin -s map_reduce_s -task remove_common_shingles -common_file mr/02_6_most_freq -input_dir mr/02_id_to_shingles -output_dir mr/03_id_to_uncommon_shingles"
+
+# map to { sketch_value, doc_id } 
+run "erl -noshell -pa ebin -s map_reduce_s -task sketcher -input_dir mr/03_id_to_uncommon_shingles -output_dir mr/04_sketches"
 
 # shuffle on sketch value -> { SketchValue, [DocId, DocId, ... ] }
-run "erl -noshell -pa ebin -s map_reduce -task partition -num_partitions #{FILES} -input_dir mr/02_mapped -output_dir mr/03_partitioned"
-run "erl -noshell -pa ebin -s map_reduce_s -task sort_collate -input_dir mr/03_partitioned -output_dir mr/04_shuffled_seperate"
-run "erl -noshell -pa ebin -s merge -input_dir mr/04_shuffled_seperate -output_dir mr/05_shuffled" 
+run "erl -noshell -pa ebin -s shuffle -input_dir mr/04_sketches -output_dir mr/05_shuffled"
 
-# emit all combos; { 123, [1,2,3] } emits {[1,2],1} {[1,3],1} {[2,3],1} 
-run "erl -noshell -pa ebin -s map_reduce_s -task reducer -input_dir mr/05_shuffled -output_dir mr/06_reduced"
+# emit all combos; 
+#  { 123, [1,2,3] } emits {[1,2],1} {[1,3],1} {[2,3],1} 
+#  { 123, [1] } emits nothing
+run "erl -noshell -pa ebin -s map_reduce_s -task combos -input_dir mr/05_shuffled -output_dir mr/06_reduced"
 
 # shufle on doc id pairs { DocIdPair, [1,1,1, ...  ] }
-run "erl -noshell -pa ebin -s map_reduce -task partition -num_partitions #{FILES} -input_dir mr/06_reduced -output_dir mr/07_partitioned2"
-run "erl -noshell -pa ebin -s map_reduce_s -task sort_collate -input_dir mr/07_partitioned2 -output_dir mr/08_shuffled_seperate2"
-run "erl -noshell -pa ebin -s merge -input_dir mr/08_shuffled_seperate2 -output_dir mr/09_shuffled2"
+run "erl -noshell -pa ebin -s shuffle -input_dir mr/06_reduced -output_dir mr/07_shuffled"
 
 # sum docid pair freqs, 
 # emits freq first, not doc id pair 
-# only emits if freq > 5
+# only emits if freq > 8
 #{ DocIdPair, [1,1,1] } -> no emit
 #{ DocIdPair, [1,1,1,1,1,1] } -> emit { 6, DocIdPair }
-run "erl -noshell -pa ebin -s map_reduce_s -task sum_reducer -min_sum 8 -input_dir mr/09_shuffled2 -output_dir mr/10_reduced2"
+run "erl -noshell -pa ebin -s map_reduce_s -task sum -min_sum 8 -input_dir mr/07_shuffled -output_dir mr/08_reduced"
 
 # final output
-`./scat mr/10_reduced2/* | perl -plne's/.*\{(.*?),(.*?)\}.*/$1 $2/;' > pairs.#{NUM}`
+`./scat mr/08_reduced/* | perl -plne's/.*\{(.*?),(.*?)\}.*/$1 $2/;' > pairs.#{NUM}`
 
 puts `du -sh mr`
 

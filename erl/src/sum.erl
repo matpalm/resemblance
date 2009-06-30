@@ -1,4 +1,4 @@
--module(sum_reducer).
+-module(sum).
 -export([initial_state/0,process/3,finished/2]).
 
 initial_state() ->

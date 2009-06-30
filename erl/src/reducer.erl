@@ -1,36 +1,42 @@
 -module(reducer).
--export([initial_state/0,process/3,finished/2]).
+-export([start/0]).
 
-initial_state() ->
-    nil.
+start() ->
+    OutFilename = opts:string_prop(output_file,"top_N.out"),
+    O = bin_parser:open_file_for_write(OutFilename),
+    EmitFn = fun(X) -> bin_parser:write(O,X) end,
 
-process({_Key,VList}, _State, EmitFn) ->
-    combos(VList, EmitFn),
-    nil.
+    Files = [ file_util:input_dir()++"/"++File || File <- file_util:input_files() ],
 
-finished(_,_) ->
-    nil.
+    Task = opts:task(),
+    InitialState = apply(Task,initial_state,[]),
+    ProcessFn = fun(Term,State) -> apply(Task,process,[Term,State,EmitFn]) end,
+    FinalState = process(Files, InitialState, ProcessFn),
+    apply(Task,finished,[FinalState, EmitFn]),
+    
+    file:close(O),
+    init:stop().
 
-combos(List,_) when length(List) < 2 ->
-    done;
+process([], State, _ProcessFn) ->
+    State;
 
-combos([H|T],EmitFn) ->
-    all_pairs(H,T,EmitFn),
-    combos(T, EmitFn).
+process([File|Files], State, ProcessFn) ->
+    State2 = parse_file(File, State, ProcessFn),
+    process(Files, State2, ProcessFn).
 
-all_pairs(_E,[],_EmitFn) ->
-    done;
+parse_file(File, State, ProcessFn) ->
+    F = bin_parser:open_file_for_read(File),
+    parse_terms(F, State, ProcessFn).
 
-all_pairs(E,[H|T],EmitFn) ->
-    PairInOrder = in_order(E,H),
-    EmitFn({PairInOrder,1}),
-    all_pairs(E,T,EmitFn).
-
-
-in_order(A,B) ->
-    case A < B of
-	true  -> {A,B};
-	false -> {B,A}
+parse_terms(F, State, ProcessFn) ->
+    Read = bin_parser:read(F),
+    case Read of 
+	eof ->
+	    State;
+	{ok,Term} -> 
+	    State2 = ProcessFn(Term, State),
+	    parse_terms(F, State2, ProcessFn);
+	Other ->
+	    io:format("error, unexpected message ~p\n",[Other])
     end.
-	     
-
+    

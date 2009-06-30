@@ -7,6 +7,17 @@ cat(AArgs) ->
     Args = [ atom_to_list(A) || A <- AArgs ],
     catf(Args).
 
+read_all_from_file(Filename) ->
+    F = bin_parser:open_file_for_read(Filename),
+    read_all(F,[]).
+
+read_all(F,Acc) ->
+    R = bin_parser:read(F),
+    case R of
+	{ok,T} -> read_all(F,[T|Acc]);
+	eof    -> lists:reverse(Acc)
+    end.    
+
 catf([]) ->
     init:stop();
 
@@ -33,7 +44,9 @@ format_fn(File) ->
     fun(Term) ->
 	    io:format(FormatStr, [File,Term])
     end.
-	    
+	   
+% input files doesnt include the input dir so that files
+% can be made in the output dir with the same filenames 
 input_files() ->
     Ls = os:cmd("ls "++input_dir()),
     Files = re:split(Ls,"\n",[{return,list}]),
@@ -44,13 +57,12 @@ input_files() ->
     Filtered.
 	       
 input_dir() ->
-    {ok,Args} = init:get_argument(input_dir),
-    hd(hd(Args)).    
+    opts:string_prop(input_dir).
 
 output_dir() ->
-    {ok,Args} = init:get_argument(output_dir),
-    hd(hd(Args)).
+    opts:string_prop(output_dir).
    
+    
 ensure_dir_created(Dir) ->
     os:cmd("mkdir "++Dir).
 

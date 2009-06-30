@@ -2,6 +2,9 @@
 -export([initial_state/0, process/3, finished/2]).
 -include("debug.hrl").
 
+%TODO by assuming that terms coming into process are in key order, ie same keys are sequential
+%     can do the collation at process time and thus have a lot less to sort in the final step
+
 initial_state() ->
     [].
 

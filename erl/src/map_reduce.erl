@@ -17,8 +17,7 @@ start() ->
 	    start_workers(Initial),
 	    start_worker_for_each_completion(Remaining),
 	    acks(NumWorkers)
-    end,
-    init:stop().
+    end.
 
 start_workers(Files) ->
     d("start for files ~p\n",[Files]),
