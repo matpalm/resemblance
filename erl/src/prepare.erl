@@ -10,8 +10,9 @@ start() ->
 open_files() ->
     file_util:ensure_output_dir_created(),
     NumFiles = opts:int_prop(num_files,10),
-    Filenames = [ file_util:output_dir()++"/"++integer_to_list(N)
-		  || N <- lists:seq(1,NumFiles)],
+    FilesOffset = opts:int_prop(files_offset,0),
+    Filenames = [ file_util:output_dir()++"/"++integer_to_list(N+FilesOffset)
+		  || N <- lists:seq(0,NumFiles-1)],
     [ bin_parser:open_file_for_write(Filename) 
       || Filename <- Filenames ].
 
@@ -22,27 +23,22 @@ close_files(Files) ->
      ).
 
 parse_stdin(Files) ->
-    parse_stdin([],Files).
+    ParserMod = opts:atom_prop(parser),
+    parse_stdin([],Files,ParserMod).
 
-parse_stdin([],Files) ->
-    parse_stdin(Files,Files);
+parse_stdin([],Files,ParserMod) ->
+    parse_stdin(Files,Files,ParserMod);
 
-parse_stdin([F|T],Files) ->
+parse_stdin([F|T],Files,ParserMod) ->
     case io:get_line('') of 
 	eof ->  
 	    done;
 	Line -> 
-	    Parsed = parse_line(chomp(Line)),
+	    Parsed = apply(ParserMod,parse_line,[chomp(Line)]),
 	    bin_parser:write(F, Parsed),
-	    parse_stdin(T,Files)
+	    parse_stdin(T,Files,ParserMod)
     end.
     
 chomp(S) -> 
     string:substr(S,1,length(S)-1).
 
-parse_line(Line) ->
-    {ok,RE} = re:compile("^.*? "),
-    {match,[{A,B}]} = re:run(Line,RE),
-    Id = list_to_integer(string:substr(Line, A+1, B-1)),
-    Data = string:substr(Line,B+1),
-    {Id,Data}.

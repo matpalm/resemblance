@@ -1,0 +1,15 @@
+map emits {abc,1} {def,1}
+
+reduce {abc,2} {def,4} | {efg,2} {wer,4}
+
+map_reduce
+ maps from one input file to one output file
+ each input file read in totally, output file written in one hit
+
+map_reduce_s
+ maps from one input file to one output file
+ terms given to task one term at time, with previous state if required
+
+reducer
+ maps from many input files to a single output file by running all input files through the one reducer task
+ doesnt require, or expect, calls to be made to the emit function until the very end

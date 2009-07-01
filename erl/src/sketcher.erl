@@ -1,5 +1,5 @@
 -module(sketcher).
--compile(export_all).
+-export([initial_state/0,process/3,finished/2]).
 
 initial_state() ->
     [ util:uhash_seed(opts:shingle_size()) 

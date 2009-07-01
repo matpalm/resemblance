@@ -24,9 +24,11 @@ FILES = ARGV.shift || "10"
 msg = "NUM=#{NUM} SRC_FILE=#{SRC_FILE} FILES=#{FILES}"
 log msg
 
+run "rm -rf mr/*"
+
 # prepare data
 # { doc_id, "text of document here" }
-run "head -n #{NUM} #{SRC_FILE} | perl -plne'tr/A-Z/a-z/' | erl -noshell -pa ebin -s prepare -num_files #{FILES} -output_dir mr/01_prepared"
+run "head -n #{NUM} #{SRC_FILE} | perl -plne'tr/A-Z/a-z/' | erl -noshell -pa ebin -s prepare -parser prepare_id_text -num_files #{FILES} -output_dir mr/01_prepared"
 
 # map to { doc_id, [shingles] } 
 run "erl -noshell -pa ebin -s map_reduce_s -task shingler -shingle_size 3 -input_dir mr/01_prepared -output_dir mr/02_id_to_shingles"
