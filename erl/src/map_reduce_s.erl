@@ -19,14 +19,12 @@ start() ->
     init:stop().
 
 start_workers(Files) ->
-    d("start for files ~p\n",[Files]),
     lists:foreach(fun(F) -> start_worker(F) end, Files).
 
 start_worker_for_each_completion([]) ->
     done;
 
 start_worker_for_each_completion([File|Files]) ->
-    d("start for file ~p, num files remaining ~p\n",[File,length(Files)]),
     receive_an_ack(),
     start_worker(File),
     start_worker_for_each_completion(Files).

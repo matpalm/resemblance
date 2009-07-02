@@ -1,6 +1,7 @@
 -module(prepare_id_pair_type).
 -compile(export_all).
 
+%TODO: no longer used?
 parse_line(Line) ->    
     [Id1S,Id2S,ResS] = [ binary_to_list(X) || X <- re:split(Line," ") ],
     Id1 = list_to_integer(Id1S),

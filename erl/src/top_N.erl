@@ -21,6 +21,9 @@ process({_,Value}=KV, [{_, MinValue}|_]=TopKVs, _EmitFn) ->
 	    end
     end.
 
+finished(State,EmitFn) ->
+    lists:foreach(EmitFn, State).
+
 ensure_not_too_many_elems(TopKVs) ->
     case length(TopKVs) > num_to_keep() of
 	true ->  tl(TopKVs);
@@ -41,8 +44,6 @@ insert_value({_,NewV}=KV, [{_,TopV}=TopKV|OtherTopKVs]=TopKVs, List) ->
 	    insert_value(KV, OtherTopKVs,  [TopKV|List])
     end.
 
-finished(State,EmitFn) ->
-    lists:foreach(EmitFn, State).
 
 num_to_keep() ->
     opts:int_prop(num_to_keep,10).

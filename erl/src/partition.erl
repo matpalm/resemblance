@@ -10,7 +10,6 @@ start_fn() ->
     NewWorkerFn.
 
 partition(InputFilename, OutFilename) ->
-    d("in ~p out ~p\n",[InputFilename,OutFilename]),
     PartitionOutputFiles = open_partition_file_handles(OutFilename),    
     read_and_partition(InputFilename, PartitionOutputFiles),
     close_all_files(PartitionOutputFiles),
@@ -19,7 +18,7 @@ partition(InputFilename, OutFilename) ->
 open_partition_file_handles(OutFilename) ->
     file_util:ensure_output_dir_created(),
     Filenames = partition_filenames(OutFilename),
-    io:format("Filename ~p\n",[Filenames]),
+    io:format("PartitionFilenames ~p\n",[Filenames]),
     [ bin_parser:open_file_for_write(Filename) || Filename <- Filenames ].
 
 partition_filenames(OutFilename) ->
