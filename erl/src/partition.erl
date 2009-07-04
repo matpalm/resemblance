@@ -23,7 +23,7 @@ open_partition_file_handles(OutFilename) ->
 
 partition_filenames(OutFilename) ->
     [ OutFilename ++".p"++integer_to_list(ON-1)
-      || ON <- lists:seq(1,opts:int_prop(num_partitions,10)) ].
+      || ON <- lists:seq(1,opts:num_partitions()) ].
    
 read_and_partition(Filename, PartitionOutputFiles) ->
     F = bin_parser:open_file_for_read(Filename),

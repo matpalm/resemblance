@@ -19,7 +19,22 @@ def run(command)
 	@last = now
 end
 
-def extract_exact_dups type, prep_type, num_entries, num_files
+def move_files from_dir, to_dir, dest_file_prefix
+		Dir.new(from_dir).entries.each do |file|
+			next if file == '.' || file == '..'
+			FileUtils.mv "#{from_dir}/#{file}", "#{to_dir}/#{dest_file_prefix}#{file}"
+		end
+end
+
+def copy_files from_dir, to_dir, dest_file_prefix
+		Dir.new(from_dir).entries.each do |file|
+			next if file == '.' || file == '..'
+			FileUtils.cp "#{from_dir}/#{file}", "#{to_dir}/#{dest_file_prefix}#{file}"
+		end
+end
+
+def extract_exact_dups type, type_indicator, prep_type, num_entries, num_files
+
 	# collate into exact dups
 	run "head -n #{num_entries} ../#{type} | perl -plne'tr/A-Z/a-z/' | erl -noshell -pa ebin -s prepare -parser #{prep_type} -num_files #{num_files} -output_dir mr/#{type}"
 	# { 1024, 'bobs cafe' }
@@ -28,15 +43,15 @@ def extract_exact_dups type, prep_type, num_entries, num_files
 	run "erl -noshell -pa ebin -s shuffle -input_dir mr/#{type}.swap -output_dir mr/#{type}.swap.reduce"
 	# { 'bobs cafe', [1024,1025] }
 
-	# extract combos
+	# extract combos and give them a type
 	run "erl -noshell -pa ebin -s map_reduce_s -task combos -input_dir mr/#{type}.swap.reduce -output_dir mr/#{type}.swap.combos"
 	# { {1024,1025}, 1 }
-	run "erl -noshell -pa ebin -s map_reduce_s -task add_type_to_value -type #{type} -input_dir mr/#{type}.swap.combos -output_dir mr/#{type}.combos"
+	run "erl -noshell -pa ebin -s map_reduce_s -task add_type_to_value -type #{type_indicator} -input_dir mr/#{type}.swap.combos -output_dir mr/#{type}.combos"
 	# { {1024,1025}, {name,1} }
 
 	return if type=='phones'
 
-	# filter single values
+	# filter out canonical values
 	# { 'bobs cafe', [1024,1025,1045] }
 	run "erl -noshell -pa ebin -s map_reduce_s -task filter_single_value -input_dir mr/#{type}.swap.reduce -output_dir mr/#{type}.unique.vk"
 	# { 'bobs cafe', 1024 }
@@ -54,26 +69,37 @@ end
 
 def sketch_dedup type, num_files
 	run "erl -noshell -pa ebin -s map_reduce_s -task shingler -shingle_size 3 -input_dir mr/#{type}.unique -output_dir mr/#{type}.shingles"
+	run "erl -noshell -pa ebin -s map_reduce_s -task sketcher -input_dir mr/#{type}.shingles -output_dir mr/#{type}.sketches"
+	run "erl -noshell -pa ebin -s shuffle -input_dir mr/#{type}.sketches -output_dir mr/#{type}.shuffled"
+	run "erl -noshell -pa ebin -s map_reduce_s -task combos -input_dir mr/#{type}.shuffled -output_dir mr/#{type}.all_combos"
+	run "erl -noshell -pa ebin -s shuffle -input_dir mr/#{type}.all_combos -output_dir mr/#{type}.all_combos_shuffled"
+	run "erl -noshell -pa ebin -s map_reduce_s -task sum -min_sum 8 -input_dir mr/#{type}.all_combos_shuffled -output_dir mr/#{type}.combos"
+	# { {123,234}, 34 } 
+	run "erl -noshell -pa ebin -s map_reduce_s -task emit_key_as_pair -input_dir mr/#{type}.combos -output_dir mr/#{type}.combos_pairs"
+	# { 123, 234 }
+	run "erl -noshell -pa ebin -s shuffle -input_dir mr/#{type}.all_combos -input_dir mr/#{type}.all_combos -output_dir mr/#{type}.all_combos_shuffled"
+
 end
 
 def extract_exact_duplicates
-	extract_exact_dups 'phones',    'prepare_id_num',  NUM_ENTRIES, NUM_FILES
-	extract_exact_dups 'names',     'prepare_id_text', NUM_ENTRIES, NUM_FILES
-	extract_exact_dups 'addresses', 'prepare_id_text', NUM_ENTRIES, NUM_FILES
+	extract_exact_dups 'phones',    'p', 'prepare_id_num',  NUM_ENTRIES, NUM_FILES
+	extract_exact_dups 'names',     'n', 'prepare_id_text', NUM_ENTRIES, NUM_FILES
+	extract_exact_dups 'addresses', 'a', 'prepare_id_text', NUM_ENTRIES, NUM_FILES
 	# collect resemblances into a single dir
 	FileUtils.mkdir_p 'mr/resems.tmp'
 	['phones','names','addresses'].each do |type|
-		dir = "mr/#{type}.combos"
-		Dir.new(dir).entries.each do |file|
-			next if file == '.' || file == '..'
-			FileUtils.mv "#{dir}/#{file}", "mr/resems.tmp/#{type}#{file}"
-		end
+		move_files "mr/#{type}.combos", 'mr/resems.tmp', type
 	end
-	run "erl -noshell -pa ebin -s shuffle -input_dir mr/resems.tmp -output_dir mr/resems"
 end
 
-def calculate_sketch_near_duplicates
+def calculate_sketch_near_duplicates 
 	sketch_dedup 'names', NUM_FILES
+	sketch_dedup 'addresses', NUM_FILES
+end
+
+def final_combine
+	run "erl -noshell -pa ebin -s shuffle -input_dir mr/resems.tmp -output_dir mr/resems"
+	run "erl -noshell -pa ebin -s reducer -task combine_nap -input_dir mr/resems -output_dir devnull> ids_name_addr_phone"
 end
 
 NUM_ENTRIES = ARGV.shift || "10"
@@ -83,13 +109,11 @@ NUM_FILES = ARGV.shift || "10"
 msg = "NUM_ENTRIES=#{NUM_ENTRIES} NUM_FILES=#{NUM_FILES}"
 log msg
 
-#run "rm -rf mr/*"
+run "rm -rf mr/*"
 
 extract_exact_duplicates
 calculate_sketch_near_duplicates
-
-# for very end, 
-#run "erl -noshell -pa ebin -s reducer -task combine_nap -input_dir mr/resems -output_file devnull > ids_name_addr_phone"
+final_combine
 
 exit 0
 

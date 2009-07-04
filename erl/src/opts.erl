@@ -5,7 +5,13 @@ override_prop(Key,Value) ->
     put(Key,Value). 
 
 num_workers() ->
-    int_prop(num_workers,6).
+    int_prop(num_workers,4).
+
+num_files() ->
+    int_prop(num_files,10).
+
+num_partitions() ->
+    int_prop(num_partitions,10).
 
 task() ->
     atom_prop(task).

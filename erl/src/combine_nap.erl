@@ -6,7 +6,7 @@ initial_state() ->
 
 process({{Id1,Id2},Resemblances}, _, _EmitFn) ->
     io:format("~p ~p ",[Id1,Id2]),
-    print_for_types([names,addresses,phones],Resemblances),
+    print_for_types([n,a,p],Resemblances), % name address phone
     io:format("\n").
 
 finished(_,_) ->
