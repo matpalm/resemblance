@@ -1,15 +1,12 @@
 -module(filter_single_value).
--export([initial_state/0,process/3,finished/2]).
+-export([params/0,process/3]).
 
-initial_state() ->
-    0.
+params() ->
+    nil.
 
 process({K,Values}, _, EmitFn) ->
     case length(Values) > 0 of
 	true  -> EmitFn({K,hd(Values)});
 	false -> ignore
-    end,
-    nil.
+    end.
 
-finished(_,_) ->
-    nil.

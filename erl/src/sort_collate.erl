@@ -1,24 +1,26 @@
 -module(sort_collate).
--export([initial_state/0, process/3, finished/2]).
+-export([process/2]).
 -include("debug.hrl").
 
-%TODO by assuming that terms coming into process are in key order, ie same keys are sequential
-%     can do the collation at process time and thus have a lot less to sort in the final step
-
-initial_state() ->
-    [].
-
-process(Term, Acc, _EmitFn) ->
-    [Term|Acc].
-
-finished(KVList, EmitFn) ->
+process(InFile,OutFile) ->
+    In = bin_parser:open_file_for_read(InFile),
+    Out = bin_parser:open_file_for_write(OutFile),
+    KVList = slurp(In,[]),
     Collated = collect_values_for_key(lists:sort(KVList)),
     lists:foreach(
-      fun(T) -> EmitFn(T) end, 
+      fun(T) -> bin_parser:write(Out, T) end, 
       Collated
-     ).
+     ),
+    util:ack_response().    
 
-% assume input sorted ??
+slurp(In, Acc) ->
+    Parsed = bin_parser:read(In),
+    case Parsed of
+	eof ->     Acc;
+	{ok,KV} -> slurp(In,[KV|Acc])
+    end.
+
+% assume input sorted 
 % in  [ {k1,v1}, {k1,v2}, {k2,v1} ]
 % out [ {k1,[v1,v2]}, {k2,[v1]} ]
 collect_values_for_key([]) ->

@@ -1,15 +1,8 @@
 -module(partition).
--export([start_fn/0, partition/2]).
+-export([process/2]).
 -include("debug.hrl").
 
-start_fn() ->
-    NewWorkerFn = 
-	fun(InFile,OutFile) ->
-		spawn(?MODULE,partition,[InFile,OutFile])
-	end,
-    NewWorkerFn.
-
-partition(InputFilename, OutFilename) ->
+process(InputFilename, OutFilename) ->
     PartitionOutputFiles = open_partition_file_handles(OutFilename),    
     read_and_partition(InputFilename, PartitionOutputFiles),
     close_all_files(PartitionOutputFiles),

@@ -2,9 +2,7 @@
 -compile(export_all).
 -include("debug.hrl").
 
-start() ->
-    MapModule = opts:task(),
-    put(start_fn, apply(MapModule,start_fn,[])),
+start() ->    
     Files = file_util:input_files(),
     NumWorkers = opts:num_workers(),
     file_util:ensure_output_dir_created(),
@@ -32,12 +30,10 @@ start_worker_for_each_completion([File|Files]) ->
     start_worker(File),
     start_worker_for_each_completion(Files).
 
-start_worker(File) ->
-    d("start worker ~p\n",[File]),
-    InFile = file_util:input_dir()++"/"++File, 
-    OutFile = file_util:output_dir()++"/"++File,
-    NewWorkerFn = get(start_fn),
-    Pid = NewWorkerFn(InFile, OutFile),
+start_worker(InFile) ->
+    OutFile = file_util:output_dir() ++ "/" ++ re:replace(InFile,"/","_",[global,{return,list}]),
+    d("start worker infile ~p outfile ~p\n",[InFile, OutFile]),
+    Pid = spawn(opts:task(), process, [InFile, OutFile]),
     Pid ! { ack, self() }.
 
 acks(N) ->

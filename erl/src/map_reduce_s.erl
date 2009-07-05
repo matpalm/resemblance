@@ -3,7 +3,9 @@
 -include("debug.hrl").
 
 start() ->
+    put(next_file_num, 0),
     Files = file_util:input_files(),
+    d("Files ~p\n",[Files]),
     NumWorkers = opts:num_workers(),
     file_util:ensure_output_dir_created(),
     case length(Files) < NumWorkers of
@@ -29,10 +31,9 @@ start_worker_for_each_completion([File|Files]) ->
     start_worker(File),
     start_worker_for_each_completion(Files).
 
-start_worker(File) ->
-    InFile = file_util:input_dir()++"/"++File,
-    OutFile = file_util:output_dir()++"/"++File,
-    Pid = spawn(?MODULE, worker, [InFile,OutFile,opts:task()]),
+start_worker(InFile) ->
+    OutFile = file_util:output_dir()++"/"++integer_to_list(next_file_num()),
+    Pid = spawn(?MODULE, worker, [InFile,OutFile,opts:tasks()]),
     Pid ! { ack, self() }.
 
 acks(N) ->
@@ -42,32 +43,47 @@ receive_an_ack() ->
     receive { ack, _ } -> ok end.    
 
 
-worker(InFile,OutFile,Module) ->
-    d("InFile=~p OutFile=~p\n",[InFile, OutFile]),
+worker(InFile,OutFile,Tasks) ->
+
+    d("InFile=~p OutFile=~p Tasks=~p\n",[InFile, OutFile, Tasks]),
+
     In = bin_parser:open_file_for_read(InFile),
     Out = bin_parser:open_file_for_write(OutFile),
-    InitialState = apply(Module,initial_state,[]),
-    EmitFn = fun(X) -> 
-		     bin_parser:write(Out,X) 
-	     end,
-    process(In, Module, InitialState, EmitFn),    
+
+    Params = [ apply(Task,params,[]) || Task <- Tasks ],
+    FinalEmitFn = fun(X) -> bin_parser:write(Out,X) end,
+    ProcessFn = wire_up(lists:reverse(Tasks), lists:reverse(Params), FinalEmitFn),
+    process(In, ProcessFn),
+
     file:close(In),
     file:close(Out),
     util:ack_response().
 
-process(In, Module, State, EmitFn) ->
+wire_up([],_,FirstProcessFn) ->
+    FirstProcessFn;
+
+wire_up([T|Tasks], [P|Params], EmitFn) ->
+    PreceedingEmitFn = fun(X) -> apply(T, process, [X, P, EmitFn]) end,
+    wire_up(Tasks, Params, PreceedingEmitFn).		  
+    
+process(In, ProcessFn) ->
     Read = bin_parser:read(In),
     case Read of
 	{ok,Term} ->
-	    State2 = apply(Module, process, [Term, State, EmitFn]),
-	    process(In, Module, State2, EmitFn);
+	    ProcessFn(Term),
+	    process(In, ProcessFn);
 	eof ->
-	    apply(Module, finished, [State, EmitFn]);
+	    done;
 	_ ->
 	    d("other? ~p\n",[Read]),
 	    Read
     end.
 
+
+next_file_num() ->
+    N = get(next_file_num),
+    put(next_file_num, N+1),
+    N.
 
 % common worker functions
 %worker_done() ->

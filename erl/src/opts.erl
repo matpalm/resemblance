@@ -16,6 +16,10 @@ num_partitions() ->
 task() ->
     atom_prop(task).
 
+tasks() ->
+    {ok,Ts} = init:get_argument(tasks),
+    [ list_to_atom(T) || T <- hd(Ts) ].
+
 %num_reducers() ->
 %    int_prop(num_reducers,4).
 
@@ -36,16 +40,16 @@ shingle_size() ->
 
 
 int_prop(Flag, Dft) ->
-    prop(Flag, fun(X) -> list_to_integer(X) end, Dft).
+    prop(Flag, fun(X) -> list_to_integer(hd(hd(X))) end, Dft).
 
 atom_prop(Flag) ->
-    prop(Flag, fun(X) -> list_to_atom(X) end).    
+    prop(Flag, fun(X) -> list_to_atom(hd(hd(X))) end).    
 
 string_prop(Flag) ->
-    prop(Flag, fun(X) -> X end).
+    prop(Flag, fun(X) -> hd(hd(X)) end).
 
 string_prop(Flag, Dft) ->
-    prop(Flag, fun(X) -> X end, Dft).
+    prop(Flag, fun(X) -> hd(hd(X)) end, Dft).
     
 prop(Flag, F) ->
     prop(Flag, F, no_default).
@@ -61,7 +65,7 @@ prop(Flag, F, Dft) ->
 			_ -> Dft
 		    end;
 		{ok,V} -> 
-		    F(hd(hd(V)))
+		    F(V)
 	    end;
 	Val -> 
 	    Val

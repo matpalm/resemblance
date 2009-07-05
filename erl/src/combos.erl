@@ -1,15 +1,11 @@
 -module(combos).
--export([initial_state/0,process/3,finished/2]).
+-export([params/0,process/3]).
 
-initial_state() ->
+params() ->
     nil.
 
 process({_Key,VList}, _State, EmitFn) ->
-    combos(VList, EmitFn),
-    nil.
-
-finished(_,_) ->
-    nil.
+    combos(VList, EmitFn).
 
 combos(List,_) when length(List) < 2 ->
     done;
@@ -25,7 +21,6 @@ all_pairs(E,[H|T],EmitFn) ->
     PairInOrder = in_order(E,H),
     EmitFn({PairInOrder,1}),
     all_pairs(E,T,EmitFn).
-
 
 in_order(A,B) ->
     case A < B of

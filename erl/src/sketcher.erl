@@ -1,7 +1,7 @@
 -module(sketcher).
--export([initial_state/0,process/3,finished/2]).
+-export([params/0,process/3]).
 
-initial_state() ->
+params() ->
     [ util:uhash_seed(opts:shingle_size()) 
 	      || _ <- lists:seq(1,opts:sketch_size()) ].
 
@@ -9,9 +9,6 @@ process({Id,Shingles}, Seeds, EmitFn) ->
     Sketches = shingles_to_sketches(Seeds, Shingles), 
     lists:foreach(fun(Sketch) -> EmitFn({Sketch,Id}) end, Sketches),
     Seeds.
-
-finished(_,_) ->
-     done.
 
 shingles_to_sketches(Seeds, Shingles) ->
     shingles_to_sketches(Seeds, Shingles, []).

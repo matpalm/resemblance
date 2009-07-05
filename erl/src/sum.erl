@@ -1,7 +1,7 @@
 -module(sum).
--export([initial_state/0,process/3,finished/2]).
+-export([params/0,process/3]).
 
-initial_state() ->
+params() ->
     nil.
 
 process({Key,Values}, _State, EmitFn) ->
@@ -11,11 +11,7 @@ process({Key,Values}, _State, EmitFn) ->
 	    EmitFn({Key,Sum});
 	false ->
 	    nothing
-    end,
-    nil.
-
-finished(_,_) ->
-    nil.
+    end.
 
 should_emit(Sum) ->
     case opts:int_prop(min_sum, -1) of

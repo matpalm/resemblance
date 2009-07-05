@@ -1,15 +1,12 @@
 -module(use_first_value_as_key).
--export([initial_state/0,process/3,finished/2]).
+-export([params/0,process/3]).
 
-initial_state() ->
-    0.
+params() ->
+    nil.
 
 process({_K,Values}, _, EmitFn) ->
     case length(Values) > 1 of
 	true  -> EmitFn({hd(Values),tl(Values)});
 	false -> ignore
-    end,
-    nil.
+    end.
 
-finished(_,_) ->
-    nil.

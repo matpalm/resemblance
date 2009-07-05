@@ -1,15 +1,11 @@
 -module(swap_key_and_value).
--export([initial_state/0,process/3,finished/2]).
+-export([params/0,process/3]).
 
-initial_state() ->
-    0.
+params() ->
+    nil.
 
 process({K,V}, _, EmitFn) ->
-    EmitFn({V,K}),
-    nil.
-
-finished(_,_) ->
-    nil.
+    EmitFn({V,K}).
 
 	     
 

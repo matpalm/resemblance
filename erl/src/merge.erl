@@ -9,6 +9,7 @@ start() ->
     % read all input key/value files and partition by key across output files
     file_util:ensure_output_dir_created(),
     PartitionToFiles = seperate_filenames_into_partitions(),   
+    d("PartitionToFiles ~p\n",[PartitionToFiles]),
     Workers = start_workers(PartitionToFiles),
     util:ack(Workers),
     init:stop().
@@ -40,10 +41,9 @@ start_workers(PartitionToFiles) ->
 start_workers([], Pids) ->
     Pids;
 
-start_workers([{Partition,Files}|PartitionToFiles], Pids) ->
-    InFilenames = [ file_util:input_dir()++"/"++File || File <- Files ],
+start_workers([{Partition,InFiles}|PartitionToFiles], Pids) ->
     OutFilename = file_util:output_dir()++"/"++Partition,
-    Pid = spawn(?MODULE, open_files_and_merge, [InFilenames, OutFilename]),
+    Pid = spawn(?MODULE, open_files_and_merge, [InFiles, OutFilename]),
     start_workers(PartitionToFiles, [Pid|Pids]).
 
 open_files_and_merge(InFilenames, OutFilename) ->

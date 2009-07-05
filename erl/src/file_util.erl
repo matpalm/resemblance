@@ -45,24 +45,31 @@ format_fn(File) ->
 	    io:format(FormatStr, [File,Term])
     end.
 	   
-% input files doesnt include the input dir so that files
-% can be made in the output dir with the same filenames 
 input_files() ->
-    Ls = os:cmd("ls "++input_dir()),
+    files_in_dirs(input_dirs(),[]).
+	
+files_in_dirs([], Files) ->
+    Files;
+
+files_in_dirs([Dir|Dirs], Files) ->
+    Files2 = Files ++ files_in_dir(Dir),
+    files_in_dirs(Dirs, Files2).
+    
+files_in_dir(Dir) ->       
+    Files = files_in_dir_without_dir(Dir),
+    [ Dir ++ "/" ++ File || File <- Files ].
+    
+files_in_dir_without_dir(Dir) ->
+    Ls = os:cmd("ls "++Dir),
     Files = re:split(Ls,"\n",[{return,list}]),
-    Filtered = lists:filter(
-      fun(L) -> length(L) > 0 end,
-      Files
-      ),
-    Filtered.
-	       
-input_dir() ->
-    opts:string_prop(input_dir).
+    lists:filter(fun(L) -> length(L) > 0 end, Files).
+
+input_dirs() ->
+    opts:prop(input_dirs, fun(X) -> hd(X) end, no_default).
 
 output_dir() ->
-    opts:string_prop(output_dir).
-   
-    
+    opts:prop(output_dir, fun(X) -> hd(hd(X)) end, no_default).
+       
 ensure_dir_created(Dir) ->
     os:cmd("mkdir "++Dir).
 

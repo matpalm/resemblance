@@ -1,23 +1,19 @@
 -module(combine_nap).
--export([initial_state/0,process/3,finished/2]).
+-export([params/0,process/3]).
 
-initial_state() ->
-    nop.
+params() ->
+    nil.
 
-process({{Id1,Id2},Resemblances}, _, _EmitFn) ->
-    io:format("~p ~p ",[Id1,Id2]),
-    print_for_types([n,a,p],Resemblances), % name address phone
-    io:format("\n").
+process({{Id1,Id2},Resemblances}, _, EmitFn) ->
+    NAP = types([n,a,p],Resemblances,[]), % name address phone
+    EmitFn({{Id1,Id2},NAP}).
 
-finished(_,_) ->
-    nop.
+types([], _, Acc) ->
+    lists:reverse(Acc);
 
-print_for_types([], _) ->
-    done;
-
-print_for_types([H|T], Resemblances) ->
-    io:format("~p ", [value_for_type(H,Resemblances)]),
-    print_for_types(T,Resemblances).
+types([H|T], Resemblances, Acc) ->
+    V = {H,value_for_type(H,Resemblances)},
+    types(T,Resemblances,[V|Acc]).
 
 value_for_type(_TargetType, []) ->
     0;

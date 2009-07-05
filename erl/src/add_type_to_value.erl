@@ -1,15 +1,12 @@
 -module(add_type_to_value).
--export([initial_state/0,process/3,finished/2]).
+-export([params/0,process/3]).
 
-initial_state() ->
-    0.
+params() ->
+    nil.
 
 process({K,V}, _, EmitFn) ->
     Type = opts:atom_prop(type),    
-    EmitFn({K,{Type,V}}),
-    nil.
+    EmitFn({K,{Type,V}}).
 
-finished(_,_) ->
-    nil.
 
 	     
