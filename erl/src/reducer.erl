@@ -7,7 +7,6 @@ start() ->
     EmitFn = fun(X) -> bin_parser:write(O,X) end,
     Files = file_util:input_files(),
     Task = opts:task(),
-    io:format("OutFilename ~p Files ~p Task ~p\n",[OutFilename,Files,Task]),
     Params = apply(Task,params,[]),
     ProcessFn = fun(Term) -> apply(Task,process,[Term,Params,EmitFn]) end,
     process(Files, ProcessFn),  

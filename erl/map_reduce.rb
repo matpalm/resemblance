@@ -92,14 +92,18 @@ end
 def final_combine
 	src_dirs = ['names','addresses','phones'].collect { |d| "mr/#{d}.combos" }.join ' '
 	run "erl -noshell -pa ebin -s shuffle -input_dirs #{src_dirs} -output_dir mr/resems"
-	run "erl -noshell -pa ebin -s reducer -task combine_nap -input_dirs mr/resems -output_file final_res.gz"
+	run "erl -noshell -pa ebin -s reducer -task combine_nap -input_dirs mr/resems -output_file final_res.bin.gz"
+	run "erl -noshell -pa ebin -s calculate_nap -file final_res.bin.gz -n #{NAME_WEIGHT} -a #{ADDR_WEIGHT} -p #{PHONE_WEIGHT} | sort -nrk3 > final_res"
 end
 
 NUM_ENTRIES = ARGV.shift || "10"
 #SRC_FILE = ARGV.shift || "../name_addr"
 NUM_FILES = ARGV.shift || "10"
+NAME_WEIGHT = 4
+ADDR_WEIGHT = 5
+PHONE_WEIGHT = 6
 
-msg = "NUM_ENTRIES=#{NUM_ENTRIES} NUM_FILES=#{NUM_FILES}"
+msg = "NUM_ENTRIES=#{NUM_ENTRIES} NUM_FILES=#{NUM_FILES} NAME_WEIGHT=#{NAME_WEIGHT} ADDR_WEIGHT=#{ADDR_WEIGHT} PHONE_WEIGHT=#{PHONE_WEIGHT}"
 log msg
 
 run "rm -rf mr/*"

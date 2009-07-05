@@ -42,6 +42,9 @@ shingle_size() ->
 int_prop(Flag, Dft) ->
     prop(Flag, fun(X) -> list_to_integer(hd(hd(X))) end, Dft).
 
+float_prop(Flag, Dft) ->
+    prop(Flag, fun(X) -> list_to_float(hd(hd(X))) end, Dft).
+
 atom_prop(Flag) ->
     prop(Flag, fun(X) -> list_to_atom(hd(hd(X))) end).    
 
