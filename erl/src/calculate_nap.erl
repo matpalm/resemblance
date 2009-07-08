@@ -19,24 +19,29 @@ start() ->
     PhoneWeightN = PhoneWeight / Total,
 
     F = bin_parser:open_file_for_read(File),
-    Weights = [{n,NameWeightN},{a,AddressWeightN},{p,PhoneWeightN}],
+    Weights = dict:from_list([{names,NameWeightN},{addresses,AddressWeightN},{phones,PhoneWeightN}]),
     process(F,Weights),
 
     init:stop().
 
-process(F,Weights) ->
+process(F, WeightsDict) ->
     Read = bin_parser:read(F),
     case Read of
 	eof ->
 	    done;
 	{ok,Term} ->
-	    calc_overall_weight(Term,Weights),
-	    process(F, Weights)
+	    {{Id1,Id2},Resems} = Term,
+	    Weight = calc_overall_weight(Resems, WeightsDict, 0),
+	    io:format("~p ~p ~p\n",[Id1,Id2,Weight]),
+	    process(F, WeightsDict)
     end.
+    
+calc_overall_weight([], _WeightsDict, Acc) ->
+    Acc;
 
-calc_overall_weight({{Id1,Id2},Resems}, Weights) ->
-    WeightedSum = lists:sum([ R*W || {{_T,R},{_T,W}} <- lists:zip(Resems,Weights) ]),
-    io:format("~p ~p ~p\n",[Id1,Id2,WeightedSum]).
+calc_overall_weight([{Type,Resem}|TypeResems], WeightsDict, Acc) ->
+    WeightedSum = dict:fetch(Type, WeightsDict) * Resem,
+    calc_overall_weight(TypeResems, WeightsDict, WeightedSum + Acc).
 
 
       

@@ -1,11 +1,10 @@
 -module(prepare_id_pair_type).
 -compile(export_all).
 
-%TODO: no longer used?
 parse_line(Line) ->    
-    [Id1S,Id2S,ResS] = [ binary_to_list(X) || X <- re:split(Line," ") ],
-    Id1 = list_to_integer(Id1S),
-    Id2 = list_to_integer(Id2S),
-    Res = list_to_float(ResS),
+    [Id1,Id2] = [ list_to_integer(binary_to_list(X)) || X <- re:split(Line," ") ],
     Type = opts:atom_prop(type),
-    {{Id1,Id2},{Type,Res}}.
+    case Type of
+	nap -> {{Id1,Id2},[{names,1},{addresses,1},{phones,1}]};
+	_   -> {{Id1,Id2},{Type,1}}
+    end.

@@ -6,5 +6,8 @@ jaccard(L1,L2) ->
     S2 = sets:from_list(L2),
     IntersectionSize = sets:size(sets:intersection(S1,S2)),
     UnionSize = sets:size(sets:union(S1,S2)),
-    IntersectionSize / UnionSize.
+    case UnionSize of 
+	0 -> 0;
+	_ -> IntersectionSize / UnionSize
+    end.
     

@@ -5,6 +5,6 @@ params() ->
     0.
 
 process({{K1,K2},_}, _, EmitFn) ->
-    EmitFn({K1,K2}),       
-    EmitFn({K2,K1}).
+    EmitFn({K1,K2}).
+%    EmitFn({K2,K1}).
 

@@ -7,7 +7,7 @@
 def read_data stream=STDIN
 	data = {}
 	stream.each do |line|
-		line =~ /^([0-9]*) (.*)/;
+		line =~ /^([0-9]*)\|(.*)/;
 		id, name_addr = $1.to_i, $2
 		raise "duplicate id #{id}?" if data[id]
 		data[id] = name_addr

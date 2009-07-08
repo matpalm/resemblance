@@ -8,12 +8,18 @@ start() ->
     init:stop().
 
 open_files() ->
-    file_util:ensure_output_dir_created(),
     NumFiles = opts:num_files(),
-    Filenames = [ file_util:output_dir()++"/"++integer_to_list(N)
-		  || N <- lists:seq(0,NumFiles-1)],
+    Filenames = filenames_for(NumFiles),
     [ bin_parser:open_file_for_write(Filename) 
       || Filename <- Filenames ].
+
+filenames_for(1) ->
+    [ opts:string_prop(output_file) ];
+
+filenames_for(NumFiles) ->
+    file_util:ensure_output_dir_created(),
+    [ file_util:output_dir()++"/"++integer_to_list(N)
+      || N <- lists:seq(0,NumFiles-1)].
 
 close_files(Files) ->
     lists:foreach(
