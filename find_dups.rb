@@ -7,7 +7,7 @@ PREFIX = ARGV.first
 
 @unique_ids_file = File.open("#{PREFIX}.unique",'w')
 @dup_ids_file = File.open("#{PREFIX}.dup.ids","w")
-@id_combos_file = File.open("#{PREFIX}.combos.ids","w")
+#@id_combos_file = File.open("#{PREFIX}.combos.ids","w")
 
 def dump
 		ids = @dup_ids
@@ -20,6 +20,7 @@ def dump
 			@dup_ids_file.puts output_ids.join(' ')
 		end
 
+=begin
 		ids.unshift master_id
 		while !ids.empty?
 			id1 = ids.shift
@@ -28,6 +29,7 @@ def dump
 				@id_combos_file.puts "#{id1} #{id2}" 
 			end
 		end
+=end
 
 		@dup_ids = []
 end
@@ -43,4 +45,4 @@ end
 
 dump
 @dup_ids_file.close
-@id_combos_file.close
+#@id_combos_file.close

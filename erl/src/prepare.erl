@@ -40,10 +40,22 @@ parse_stdin([F|T],Files,ParserMod) ->
 	    done;
 	Line -> 
 	    Parsed = apply(ParserMod,parse_line,[chomp(Line)]),
-	    bin_parser:write(F, Parsed),
+	    case Parsed of
+		{ single_value, V } ->
+		    bin_parser:write(F, V);
+		{ multiple_values, Vs } ->
+		    write_values(Vs,F)
+	    end,
 	    parse_stdin(T,Files,ParserMod)
     end.
     
+write_values([],_F) ->
+    done;
+
+write_values([V|Vs],F) ->
+    bin_parser:write(F, V),
+    write_values(Vs,F).
+
 chomp(S) -> 
     string:substr(S,1,length(S)-1).
 

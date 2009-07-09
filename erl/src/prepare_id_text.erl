@@ -6,4 +6,4 @@ parse_line(Line) ->
     {match,[{A,B}]} = re:run(Line,RE),
     Id = list_to_integer(string:substr(Line, A+1, B-1)),
     Data = string:substr(Line,B+1),
-    {Id,Data}.
+    { single_value, {Id,Data} }.

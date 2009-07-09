@@ -53,13 +53,11 @@ end
 def extract_exact_duplicates
 	run "head -n #{NUM_ENTRIES} ../name_addr | ../split.rb single_export"
 	run "sort -k2 -t\\| nap | ../find_dups.rb nap" # nap.unique, nap.combo.ids & nap.dup.ids
-	# TODO handle exacts in graph phase, nap.combos.ids iterates master/slaves
-	#run "cat nap.combos.ids | erl -noshell -pa ebin -s prepare -parser prepare_id_pair_type -type nap -num_files 1 -output_file mr/result/nap.exact.result" 
 
 	run "cat nap.unique | ../split.rb" # names, addresses, phones
 	['names', 'addresses', 'phones'].each do |type|
 		run "sort -k2 -t\\| #{type} | ../find_dups.rb #{type}" # type.unique, type.combo.ids & type.dup.ids
-		run "cat #{type}.combos.ids | erl -noshell -pa ebin -s prepare -parser prepare_id_pair_type -type #{type} -num_files 1 -output_file mr/result/#{type}.exact.result"
+		run "cat #{type}.dup.ids | erl -noshell -pa ebin -s prepare -parser prepare_id_list_type -type #{type} -num_files 1 -output_file mr/result/#{type}.exact.result"
 	end
 
 end
@@ -82,7 +80,7 @@ def explode_sketch_results
 end
 
 def combine_results
-	# TODO merge..
+	# merge..
 	#  mr/result/<type>.exact.result ; name/address/phone
 	#  mr/result/<type>.sketch.result ; name/address
 	run "erl -noshell -pa ebin -s shuffle -input_dirs mr/result -output_dir mr/final_result"
@@ -95,11 +93,13 @@ end
 msg = "NUM_ENTRIES=#{NUM_ENTRIES} NUM_FILES=#{NUM_FILES} NAME_WEIGHT=#{NAME_WEIGHT} ADDR_WEIGHT=#{ADDR_WEIGHT} PHONE_WEIGHT=#{PHONE_WEIGHT}"
 log msg
 
-run "rm -rf mr/*"
+# TODO: where are combo.ids used? can we use dup.ids there instead??
+run "rm -rf  names* addresses* phones* nap* mr/*"
 run "mkdir mr/result"
 extract_exact_duplicates
 calculate_sketch_near_duplicates
 explode_sketch_results
 combine_results
 
+#TODO: wc version of scat, look for header and then skip that many bytes
 
