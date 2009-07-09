@@ -14,7 +14,10 @@ STDIN.each do |line|
 
 	id = cols[0]
 	name = cols[1]
-	address = [2,3,4,5].collect{|i| cols[i]}.join('|')	
+
+	addr_join_char = single_export ? '|' : ' '
+	address = [2,3,4,5].collect{|i| cols[i]}.join(addr_join_char).strip
+
 	phone = cols[6]
 
 	if single_export

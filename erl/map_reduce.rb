@@ -6,11 +6,12 @@ def log msg
 	`echo #{msg} >> stats.out`
 end
 
-def run(command)
+def run command
 	@cmd += 1
 	now = Time.now
-	puts "#{now} (#{now-@last}sec) #{@cmd} #{command}"
   log "S #{@cmd}"
+	command += " >#{@cmd}.out" unless command.include? '>'
+	puts "#{now} (#{now-@last}sec) #{@cmd} #{command}"
 	`#{command}`
 	log "E #{@cmd} DU #{`du -sh mr`.chomp}"
 	@last = now
@@ -27,9 +28,9 @@ NAME_WEIGHT = 4
 ADDR_WEIGHT = 5
 PHONE_WEIGHT = 1
 
-def sketch_dedup type
+def sketch_dedup type, shingle_size
 	run "cat split/#{type}.unique | erl -noshell -pa ebin -s prepare -parser prepare_id_text -num_files #{NUM_FILES} -output_dir mr/#{type}.unique"
-	run "erl -noshell -pa ebin -s map_reduce_s -tasks shingler sketcher -shingle_size 3 -input_dirs mr/#{type}.unique -output_dir mr/#{type}.sketches"
+	run "erl -noshell -pa ebin -s map_reduce_s -tasks shingler sketcher -shingle_size #{shingle_size} -input_dirs mr/#{type}.unique -output_dir mr/#{type}.sketches"
 	run "erl -noshell -pa ebin -s shuffle -input_dirs mr/#{type}.sketches -output_dir mr/#{type}.shuffled"
 	run "erl -noshell -pa ebin -s map_reduce_s -tasks combos -input_dirs mr/#{type}.shuffled -output_dir mr/#{type}.all_combos"
 	run "erl -noshell -pa ebin -s shuffle -input_dirs mr/#{type}.all_combos -output_dir mr/#{type}.all_combos_shuffled"
@@ -44,7 +45,7 @@ def sketch_dedup type
   # 
 	run "cat mr/#{type}.unique/* > mr/#{type}.unique.all" # hack!
 	run "cat mr/#{type}.combos_pairs/* > mr/#{type}.combos_pairs.all" # hack2!
-	run "erl -noshell -pa ebin -s pair_to_jaccard -shingle_size 3 -type #{type} -id_name mr/#{type}.unique.all -id_pairs mr/#{type}.combos_pairs.all -output_file mr/#{type}.sketch.unexploded.result "
+	run "erl -noshell -pa ebin -s pair_to_jaccard -shingle_size #{shingle_size} -type #{type} -id_name mr/#{type}.unique.all -id_pairs mr/#{type}.combos_pairs.all -output_file mr/#{type}.sketch.unexploded.result "
 end
 
 ####
@@ -63,9 +64,9 @@ def extract_exact_duplicates
 end
 
 def calculate_sketch_near_duplicates 
-	['names','addresses'].each do |type|
-		sketch_dedup type # makes type.sketch.result
-	end
+	# makes type.sketch.result
+	sketch_dedup 'names', 3 
+	sketch_dedup 'addresses', 6
 end
 
 def explode_sketch_results
@@ -85,7 +86,15 @@ def combine_results
 	#  mr/result/<type>.sketch.result ; name/address
 	run "erl -noshell -pa ebin -s shuffle -input_dirs mr/result -output_dir mr/final_result"
 	run "cat mr/final_result/* > mr/final_result.all"
-	run "erl -noshell -pa ebin -s calculate_nap -file mr/final_result.all -n #{NAME_WEIGHT} -a #{ADDR_WEIGHT} -p #{PHONE_WEIGHT} | sort -nrk3 > final_res"
+	run "erl -noshell -pa ebin -s calculate_nap -file mr/final_result.all -n #{NAME_WEIGHT} -a #{ADDR_WEIGHT} -p #{PHONE_WEIGHT} | sort -nrk3 > final_similiarities"
+end
+
+####
+
+def choose_representative_id_from_sketch_dups
+	run "mkdir ccgraph 2>/dev/null"
+	run "cat final_similiarities | ../filter_under.rb 0.6 > ccgraph/sketched"
+	run "cat ccgraph/sketched | ../connected_components.rb > sketch.dup.ids"
 end
 
 ####
@@ -93,13 +102,17 @@ end
 msg = "NUM_ENTRIES=#{NUM_ENTRIES} NUM_FILES=#{NUM_FILES} NAME_WEIGHT=#{NAME_WEIGHT} ADDR_WEIGHT=#{ADDR_WEIGHT} PHONE_WEIGHT=#{PHONE_WEIGHT}"
 log msg
 
-# TODO: where are combo.ids used? can we use dup.ids there instead??
 `rm -rf mr split`
 `mkdir mr split mr/result`
 extract_exact_duplicates
 calculate_sketch_near_duplicates
 explode_sketch_results
 combine_results
+choose_representative_id_from_sketch_dups
+
+# exact dups in split/nap.dup.ids
+# skectch dups in sketch.dup.ids
+# (both files have master id followed by slave ids)
 
 #TODO: wc version of scat, look for header and then skip that many bytes
 
