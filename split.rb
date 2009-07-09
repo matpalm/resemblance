@@ -1,11 +1,12 @@
 #!/usr/bin/env ruby
 
 single_export = ARGV.include? 'single_export'
+`mkdir split 2>/dev/null`
 
 if single_export
-	nap = File.open('nap','w')
+	nap = File.open('split/nap','w')
 else
-	names, addresses, phones = ['names','addresses','phones'].collect { |f| File.open(f,'w') }
+	names, addresses, phones = ['names','addresses','phones'].collect { |f| File.open("split/#{f}",'w') }
 end
 
 STDIN.each do |line|

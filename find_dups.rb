@@ -5,8 +5,8 @@ raise "usage: cat data | ./find_dups.rb <prefix>" unless ARGV.length==1
 @dup_ids = []
 PREFIX = ARGV.first
 
-@unique_ids_file = File.open("#{PREFIX}.unique",'w')
-@dup_ids_file = File.open("#{PREFIX}.dup.ids","w")
+@unique_ids_file = File.open("split/#{PREFIX}.unique",'w')
+@dup_ids_file = File.open("split/#{PREFIX}.dup.ids","w")
 #@id_combos_file = File.open("#{PREFIX}.combos.ids","w")
 
 def dump

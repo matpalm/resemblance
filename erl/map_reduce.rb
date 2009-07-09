@@ -28,7 +28,7 @@ ADDR_WEIGHT = 5
 PHONE_WEIGHT = 1
 
 def sketch_dedup type
-	run "cat #{type}.unique | erl -noshell -pa ebin -s prepare -parser prepare_id_text -num_files #{NUM_FILES} -output_dir mr/#{type}.unique"
+	run "cat split/#{type}.unique | erl -noshell -pa ebin -s prepare -parser prepare_id_text -num_files #{NUM_FILES} -output_dir mr/#{type}.unique"
 	run "erl -noshell -pa ebin -s map_reduce_s -tasks shingler sketcher -shingle_size 3 -input_dirs mr/#{type}.unique -output_dir mr/#{type}.sketches"
 	run "erl -noshell -pa ebin -s shuffle -input_dirs mr/#{type}.sketches -output_dir mr/#{type}.shuffled"
 	run "erl -noshell -pa ebin -s map_reduce_s -tasks combos -input_dirs mr/#{type}.shuffled -output_dir mr/#{type}.all_combos"
@@ -52,12 +52,12 @@ end
 # makes [nap,names,addresses,phones].combo.ids 
 def extract_exact_duplicates
 	run "head -n #{NUM_ENTRIES} ../name_addr | ../split.rb single_export"
-	run "sort -k2 -t\\| nap | ../find_dups.rb nap" # nap.unique, nap.combo.ids & nap.dup.ids
+	run "sort -k2 -t\\| split/nap | ../find_dups.rb nap" # nap.unique, nap.combo.ids & nap.dup.ids
 
-	run "cat nap.unique | ../split.rb" # names, addresses, phones
+	run "cat split/nap.unique | ../split.rb" # names, addresses, phones
 	['names', 'addresses', 'phones'].each do |type|
-		run "sort -k2 -t\\| #{type} | ../find_dups.rb #{type}" # type.unique, type.combo.ids & type.dup.ids
-		run "cat #{type}.dup.ids | erl -noshell -pa ebin -s prepare -parser prepare_id_list_type -type #{type} -num_files 1 -output_file mr/result/#{type}.exact.result"
+		run "sort -k2 -t\\| split/#{type} | ../find_dups.rb #{type}" # type.unique, type.combo.ids & type.dup.ids
+		run "cat split/#{type}.dup.ids | erl -noshell -pa ebin -s prepare -parser prepare_id_list_type -type #{type} -num_files 1 -output_file mr/result/#{type}.exact.result"
 	end
 
 end
@@ -74,7 +74,7 @@ def explode_sketch_results
   # to make mr/type.sketch.exploded.result
 	# like end of sketch_dedup this is also a bit hacky, again might be better as dets load or m/r join
 	['names','addresses'].each do |type|
-		run "cat #{type}.dup.ids | erl -noshell -pa ebin -s prepare -parser prepare_id_nums -num_files 1 -output_file mr/#{type}.dup.ids.all"
+		run "cat split/#{type}.dup.ids | erl -noshell -pa ebin -s prepare -parser prepare_id_nums -num_files 1 -output_file mr/#{type}.dup.ids.all"
 		run "erl -noshell -pa ebin -s explode_combos -dup_ids mr/#{type}.dup.ids.all -input_file mr/#{type}.sketch.unexploded.result -output_file mr/result/#{type}.sketch.result"
 	end
 end
@@ -94,8 +94,8 @@ msg = "NUM_ENTRIES=#{NUM_ENTRIES} NUM_FILES=#{NUM_FILES} NAME_WEIGHT=#{NAME_WEIG
 log msg
 
 # TODO: where are combo.ids used? can we use dup.ids there instead??
-run "rm -rf  names* addresses* phones* nap* mr/*"
-run "mkdir mr/result"
+`rm -rf mr split`
+`mkdir mr split mr/result`
 extract_exact_duplicates
 calculate_sketch_near_duplicates
 explode_sketch_results
