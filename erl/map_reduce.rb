@@ -6,15 +6,19 @@ def log msg
 	`echo #{msg} >> stats.out`
 end
 
+def erl command
+	run "erl -noshell -pa ebin -s #{command}"
+end
+
 def run command
 	@cmd += 1
-	now = Time.now
   log "S #{@cmd}"
 	command += " >#{@cmd}.out" unless command.include? '>'
-	puts "#{now} (#{now-@last}sec) #{@cmd} #{command}"
+	start = Time.now
 	`#{command}`
-	log "E #{@cmd} DU #{`du -sh mr`.chomp}"
-	@last = now
+	now = Time.now
+	puts "#{now} (#{now-start}sec) #{@cmd} #{command}"
+	log "E #{@cmd}"
 end
 
 @cmd = 0
@@ -30,12 +34,12 @@ PHONE_WEIGHT = 1
 
 def sketch_dedup type, shingle_size
 	run "cat split/#{type}.unique | erl -noshell -pa ebin -s prepare -parser prepare_id_text -num_files #{NUM_FILES} -output_dir mr/#{type}.unique"
-	run "erl -noshell -pa ebin -s map_reduce_s -tasks shingler sketcher -shingle_size #{shingle_size} -input_dirs mr/#{type}.unique -output_dir mr/#{type}.sketches"
-	run "erl -noshell -pa ebin -s shuffle -input_dirs mr/#{type}.sketches -output_dir mr/#{type}.shuffled"
-	run "erl -noshell -pa ebin -s map_reduce_s -tasks combos -input_dirs mr/#{type}.shuffled -output_dir mr/#{type}.all_combos"
-	run "erl -noshell -pa ebin -s shuffle -input_dirs mr/#{type}.all_combos -output_dir mr/#{type}.all_combos_shuffled"
+	erl "map_reduce_s -tasks shingler sketcher -shingle_size #{shingle_size} -input_dirs mr/#{type}.unique -output_dir mr/#{type}.sketches"
+	erl "shuffle -input_dirs mr/#{type}.sketches -output_dir mr/#{type}.shuffled"
+	erl "map_reduce_s -tasks combos -input_dirs mr/#{type}.shuffled -output_dir mr/#{type}.all_combos"
+	erl "shuffle -input_dirs mr/#{type}.all_combos -output_dir mr/#{type}.all_combos_shuffled"
 	# { {123,234}, [1,1,1,1,1] }
-	run "erl -noshell -pa ebin -s map_reduce_s -tasks sum emit_key_as_pair -min_sum 8 -input_dirs mr/#{type}.all_combos_shuffled -output_dir mr/#{type}.combos_pairs"
+	erl "map_reduce_s -tasks sum emit_key_as_pair -min_sum 8 -input_dirs mr/#{type}.all_combos_shuffled -output_dir mr/#{type}.combos_pairs"
 	# { 123, 234 }
 
 	# calculate jaccard similiarity for the sketch resulting combo pairs
@@ -45,7 +49,7 @@ def sketch_dedup type, shingle_size
   # 
 	run "cat mr/#{type}.unique/* > mr/#{type}.unique.all" # hack!
 	run "cat mr/#{type}.combos_pairs/* > mr/#{type}.combos_pairs.all" # hack2!
-	run "erl -noshell -pa ebin -s pair_to_jaccard -shingle_size #{shingle_size} -type #{type} -id_name mr/#{type}.unique.all -id_pairs mr/#{type}.combos_pairs.all -output_file mr/#{type}.sketch.unexploded.result "
+	erl "pair_to_jaccard -shingle_size #{shingle_size} -type #{type} -id_name mr/#{type}.unique.all -id_pairs mr/#{type}.combos_pairs.all -output_file mr/#{type}.sketch.unexploded.result "
 end
 
 ####
@@ -76,7 +80,7 @@ def explode_sketch_results
 	# like end of sketch_dedup this is also a bit hacky, again might be better as dets load or m/r join
 	['names','addresses'].each do |type|
 		run "cat split/#{type}.dup.ids | erl -noshell -pa ebin -s prepare -parser prepare_id_nums -num_files 1 -output_file mr/#{type}.dup.ids.all"
-		run "erl -noshell -pa ebin -s explode_combos -dup_ids mr/#{type}.dup.ids.all -input_file mr/#{type}.sketch.unexploded.result -output_file mr/result/#{type}.sketch.result"
+		erl "explode_combos -dup_ids mr/#{type}.dup.ids.all -input_file mr/#{type}.sketch.unexploded.result -output_file mr/result/#{type}.sketch.result"
 	end
 end
 
@@ -84,9 +88,9 @@ def combine_results
 	# merge..
 	#  mr/result/<type>.exact.result ; name/address/phone
 	#  mr/result/<type>.sketch.result ; name/address
-	run "erl -noshell -pa ebin -s shuffle -input_dirs mr/result -output_dir mr/final_result"
+	erl "shuffle -input_dirs mr/result -output_dir mr/final_result"
 	run "cat mr/final_result/* > mr/final_result.all"
-	run "erl -noshell -pa ebin -s calculate_nap -file mr/final_result.all -n #{NAME_WEIGHT} -a #{ADDR_WEIGHT} -p #{PHONE_WEIGHT} | sort -nrk3 > final_similiarities"
+	erl "calculate_nap -file mr/final_result.all -n #{NAME_WEIGHT} -a #{ADDR_WEIGHT} -p #{PHONE_WEIGHT} | sort -nrk3 > final_similiarities"
 end
 
 ####
@@ -95,6 +99,7 @@ def choose_representative_id_from_sketch_dups
 	run "mkdir ccgraph 2>/dev/null"
 	run "cat final_similiarities | ../filter_under.rb 0.6 > ccgraph/sketched"
 	run "cat ccgraph/sketched | ../connected_components.rb > sketch.dup.ids"
+	# graph sketch diff with ../result_to_dot.rb sketch.png < ccgraph/sketched
 end
 
 ####

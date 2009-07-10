@@ -7,6 +7,10 @@ cat(AArgs) ->
     Args = [ atom_to_list(A) || A <- AArgs ],
     catf(Args).
 
+wc(AArgs) ->
+    Args = [ atom_to_list(A) || A <- AArgs ],
+    wc_many(Args).
+
 read_all_from_file(Filename) ->
     F = bin_parser:open_file_for_read(Filename),
     read_all(F,[]).
@@ -18,14 +22,14 @@ read_all(F,Acc) ->
 	eof    -> lists:reverse(Acc)
     end.    
 
-catf([]) ->
-    init:stop();
-
-catf([File|Files]) ->
-    F = bin_parser:open_file_for_read(File),
-    EmitFn = format_fn(File),
-    cat_file(F, EmitFn, 1, bin_parser:read(F)),
-    catf(Files),
+catf(Files) ->
+    lists:foreach(
+      fun(File) ->
+	      F = bin_parser:open_file_for_read(File),
+	      EmitFn = format_fn(File),
+	      cat_file(F, EmitFn, 1, bin_parser:read(F))
+      end,
+      Files),
     init:stop().
 
 cat_file(_F, _EmitFn, _N, eof) ->
@@ -34,7 +38,7 @@ cat_file(_F, _EmitFn, _N, eof) ->
 cat_file(F, EmitFn, N, {ok,Term}) ->
     EmitFn(Term), % used to use N here
     cat_file(F, EmitFn, N+1, bin_parser:read(F)).
-    
+
 format_fn(File) ->
     FormatArg = init:get_argument(format),
     FormatStr = case FormatArg of
@@ -44,7 +48,17 @@ format_fn(File) ->
     fun(Term) ->
 	    io:format(FormatStr, [File,Term])
     end.
-	   
+
+wc_many(Files) ->
+    lists:foreach(
+      fun(File) ->
+	      F = bin_parser:open_file_for_read(File),
+	      WC = bin_parser:wc(F),
+	      io:format("~p ~w\n",[File,WC])
+      end,
+      Files),
+    init:stop().
+
 input_files() ->
     files_in_dirs(input_dirs(),[]).
 	

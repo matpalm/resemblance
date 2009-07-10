@@ -1,5 +1,5 @@
 -module(bin_parser).
--export([open_file_for_read/1, open_file_for_write/1, write/2, read/1]).
+-export([open_file_for_read/1, open_file_for_write/1, write/2, read/1, wc/1]).
 -define(WRITE_BUFFER_SIZE, 1048576).
 
 %-----------------------
@@ -30,7 +30,6 @@ read(F) ->
 	{ok,Bytes} -> {ok,read_term(F,Bytes)};
 	EofOrErr -> EofOrErr 
     end.
-
 	     
 read_term(F, <<19,75,LengthBytes/binary>>) ->
     Length = bytes_to_size(LengthBytes),
@@ -41,6 +40,23 @@ read_term(F, <<19,75,LengthBytes/binary>>) ->
 
 read_term(_F, Data) ->
     {error,{expected_header_but_got, Data}}.
+
+wc(F) ->
+    wc(F, 0).
+
+wc(F, AccSize) ->
+    case file:read(F, 6) of
+	eof ->
+	    AccSize;
+	{ok,HeaderBytes} ->
+	    <<19,75,LengthBytes/binary>> = HeaderBytes,
+	    TermLength = bytes_to_size(LengthBytes),
+	    % TODO: test on bigger file; better to open file not as raw and use pread?
+	    _Discard = file:read(F, TermLength),
+	    wc(F, AccSize + 1);
+	Err ->
+	    Err 
+    end.
 
 size_to_bytes(Size) ->		   
     % todo: look up bit shifting operators when off train
