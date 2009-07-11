@@ -6,9 +6,16 @@ params() ->
     opts:shingle_size().
 
 process({Id,Content}, ShingleSize, EmitFn) ->
-    Shingles = util:shingles(Content, ShingleSize),
+    Shingles = case length(Content) =< ShingleSize of
+		   true ->
+		       % single shingle padded to shingle size
+		       [lists:flatten(io_lib:format("~-*s",[ShingleSize,Content]))];
+		   false ->
+		       util:shingles(Content, ShingleSize)
+	       end,
     EmitFn({Id,Shingles}).
 
+    
 
 
 
