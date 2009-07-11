@@ -13,8 +13,8 @@ end
 def run command
 	@cmd += 1
   log "S #{@cmd}"
-	command += " >#{@cmd}.out" unless command.include? '>'
 	start = Time.now
+	command += " >#{@cmd}.out" unless command.include? '>'
 	`#{command}`
 	now = Time.now
 	puts "#{now} (#{now-start}sec) #{@cmd} #{command}"
@@ -25,8 +25,8 @@ end
 @last = Time.now
 
 NUM_ENTRIES = ARGV.shift || "10"
-SRC_FILE = ARGV.shift || "../name_addr"
 NUM_FILES = ARGV.shift || "10"
+SRC_FILE = ARGV.shift || '../name_addr'
 
 NAME_WEIGHT = 4
 ADDR_WEIGHT = 5
@@ -35,9 +35,9 @@ PHONE_WEIGHT = 1
 def sketch_dedup type, shingle_size
 	run "cat split/#{type}.unique | erl -noshell -pa ebin -s prepare -parser prepare_id_text -num_files #{NUM_FILES} -output_dir mr/#{type}.unique"
 	erl "map_reduce_s -tasks shingler sketcher -shingle_size #{shingle_size} -input_dirs mr/#{type}.unique -output_dir mr/#{type}.sketches"
-	erl "shuffle -input_dirs mr/#{type}.sketches -output_dir mr/#{type}.shuffled"
+	erl "shuffle -num_partitions #{NUM_FILES} -input_dirs mr/#{type}.sketches -output_dir mr/#{type}.shuffled"
 	erl "map_reduce_s -tasks combos -input_dirs mr/#{type}.shuffled -output_dir mr/#{type}.all_combos"
-	erl "shuffle -input_dirs mr/#{type}.all_combos -output_dir mr/#{type}.all_combos_shuffled"
+	erl "shuffle -num_partitions #{NUM_FILES} -input_dirs mr/#{type}.all_combos -output_dir mr/#{type}.all_combos_shuffled"
 	# { {123,234}, [1,1,1,1,1] }
 	erl "map_reduce_s -tasks sum emit_key_as_pair -min_sum 8 -input_dirs mr/#{type}.all_combos_shuffled -output_dir mr/#{type}.combos_pairs"
 	# { 123, 234 }
@@ -56,7 +56,7 @@ end
 
 # makes [nap,names,addresses,phones].combo.ids 
 def extract_exact_duplicates
-	run "head -n #{NUM_ENTRIES} ../name_addr | ../split.rb single_export"
+	run "head -n #{NUM_ENTRIES} #{SRC_FILE} | ../split.rb single_export"
 	run "sort -k2 -t\\| split/nap | ../find_dups.rb nap" # nap.unique, nap.combo.ids & nap.dup.ids
 
 	run "cat split/nap.unique | ../split.rb" # names, addresses, phones
@@ -88,7 +88,7 @@ def combine_results
 	# merge..
 	#  mr/result/<type>.exact.result ; name/address/phone
 	#  mr/result/<type>.sketch.result ; name/address
-	erl "shuffle -input_dirs mr/result -output_dir mr/final_result"
+	erl "shuffle -num_partitions #{NUM_FILES} -input_dirs mr/result -output_dir mr/final_result"
 	run "cat mr/final_result/* > mr/final_result.all"
 	erl "calculate_nap -file mr/final_result.all -n #{NAME_WEIGHT} -a #{ADDR_WEIGHT} -p #{PHONE_WEIGHT} | sort -nrk3 > final_similiarities"
 end
