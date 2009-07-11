@@ -3,10 +3,10 @@
 -include("debug.hrl").
 
 params() ->
-    nil.
+    opts:shingle_size().
 
-process({Id,Content}, _, EmitFn) ->
-    Shingles = util:shingles(Content),
+process({Id,Content}, ShingleSize, EmitFn) ->
+    Shingles = util:shingles(Content, ShingleSize),
     EmitFn({Id,Shingles}).
 
 
