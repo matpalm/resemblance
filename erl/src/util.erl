@@ -1,7 +1,8 @@
 -module(util).
 -export([ shingles/1, shingles/2, uhash/2, uhash_seed/1, merge/2, 
 	  ack/1, ack_response/0,
-	  slurp_stdin/0, slurp_stdin/1]).
+	  slurp_stdin/0, slurp_stdin/1,
+	  timestamp/0]).
 
 % todo get rid of most of these above functions, who is calling them??
 
@@ -89,4 +90,12 @@ slurp_stdin(Fn,Acc) ->
 chomp(S) -> 
     string:substr(S,1,length(S)-1).
      
+timestamp() ->		  
+    iso_8601_fmt(erlang:localtime()).
+
+iso_8601_fmt(DateTime) ->
+    % http://schemecookbook.org/Erlang/TimeISO8601
+    {{Year,Month,Day},{Hour,Min,Sec}} = DateTime,
+    io_lib:format("~4.10.0B~2.10.0B~2.10.0B ~2.10.0B~2.10.0B~2.10.0B",
+        [Year, Month, Day, Hour, Min, Sec]).
 

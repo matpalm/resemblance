@@ -21,6 +21,5 @@ shingles_to_sketches([Seed|Seeds], Shingles, Sketches) ->
     shingles_to_sketches(Seeds, Shingles, [Sketch|Sketches]).
 
 shingles_to_sketch(Seed, Shingles) ->
-    io:format("processing ~p\n",[Shingles]),
     Hashes = [ util:uhash(S,Seed) || S <- Shingles ],
     lists:min(Hashes).
