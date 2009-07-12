@@ -5,6 +5,7 @@ raise "usage: cat data | ./find_dups.rb <prefix>" unless ARGV.length==1
 @dup_ids = []
 PREFIX = ARGV.first
 
+`mkdir split 2>/dev/null`
 @unique_ids_file = File.open("split/#{PREFIX}.unique",'w')
 @dup_ids_file = File.open("split/#{PREFIX}.dup.ids","w")
 

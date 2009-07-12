@@ -15,15 +15,15 @@ STDIN.each do |line|
 	id = cols[0]
 	name = cols[1]
 
-	addr_join_char = single_export ? '|' : ' '
-	address = [2,3,4,5].collect{|i| cols[i]}.join(addr_join_char).strip
-
-	phone = cols[6]
+	address_join_char = single_export ? '|' : ' '
+	address = [2,3].collect{|i| cols[i]}.join(address_join_char).strip
 
 	if single_export
+		phone = cols[6]
 		name_addr_phone = [name,address,phone].join('|')
 		nap.puts "#{id}|#{name_addr_phone}"
 	else
+		phone = cols[4]
 		raise "empty name? [#{line}]" if name.empty?
 		names.puts "#{id}|#{name}"
 		addresses.puts "#{id}|#{address}" unless address.empty?

@@ -12,3 +12,4 @@ end
 tmp.puts "}"
 tmp.close
 `dot -Tpng #{tmpfile} > #{OUTFILE}`
+`rm #{tmpfile}`

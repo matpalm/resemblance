@@ -56,7 +56,7 @@ end
 
 # makes [nap,names,addresses,phones].combo.ids 
 def extract_exact_duplicates
-	run "head -n #{NUM_ENTRIES} #{SRC_FILE} | ../split.rb single_export"
+	run "head -n #{NUM_ENTRIES} #{SRC_FILE} | perl -plne'tr/A-Z/a-z/' | ../split.rb single_export"
 	run "sort -k2 -t\\| split/nap | ../find_dups.rb nap" # nap.unique, nap.combo.ids & nap.dup.ids
 
 	run "cat split/nap.unique | ../split.rb" # names, addresses, phones
@@ -69,8 +69,8 @@ end
 
 def calculate_sketch_near_duplicates 
 	# makes type.sketch.result
-	sketch_dedup 'names', 3 
-	sketch_dedup 'addresses', 6
+	sketch_dedup 'names', 4 
+	sketch_dedup 'addresses', 4
 end
 
 def explode_sketch_results
