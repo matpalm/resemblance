@@ -3,7 +3,7 @@
 def emit_combos list
 	while not list.empty?
 		first = list.shift
-		list.each { |other| puts "LongValueSum:#{first} #{other}\t1" }
+		list.each { |other| puts "#{first} #{other}" }
 	end
 end
 

@@ -1,0 +1,69 @@
+sketching is a method where we build a sketch per document and compare sketches
+instead of the documents themselves to approximate a jaccard coeffecient.
+
+say we want to compare three pieces of text using sketching
+
+d1 'the cat'
+d2 'a cat'
+d3 'treeez'
+
+first we pick a sketch size, say 3 (we'll talk about what changing this means later)
+
+convert d1 'the cat' to shingles
+'the cat' => [ 'the', 'he ', 'e c', ' ca', 'cat' ]
+
+hash each shingle with a hash function; hash1
+hash1 of each shingle = [ 12, 56, 54, 98, 34 ] 
+the first sketch value is the min; ie 12
+
+do hashing again with a different hash function; hash2
+hash2 of each shingle = [ 93, 27, 26, 18, 28 ]
+the second sketch value is the min, ie 18
+
+do hashing again with a third hash function; hash3
+hash3 of each shingle = [ 28, 43, 24, 83, 23 ]
+the third sketch value is the min, ie 23
+
+the sketch of 'the cat' is then [ 12, 18, 23 ]
+
+do the same for doc2 and doc3 ; ie shingle, apply hashes to shingles selecting min
+
+say the sketch of 'a cat' is then [ 12, 13, 23 ]
+and the sketch of 'treeez' is [ 11, 18, 25 ]
+
+we then count the number of sketch values each pair has in common.
+sketch value 12 is in d1 and d2
+sketch value 18 is in d1 and d3
+sketch value 23 is in d1 and d2
+
+so 
+d1 and d2 have 2 in common
+d1 and d3 have 1 in common
+d2 and d3 have 1 in common
+
+and we say d1 and d2 are the most common. turns out this number of sketch values in common
+approximates the jaccard coeffecient. (complex maths explaining this here) and we have avoided
+ n^2 in the number of documents by instead falling back to n^2 in the most frequently
+used sketch value. TALK ABOUT how the max number in common should be << #docs
+
+bash>
+
+cat input/test.data.orig | ./sketch.rb | sort -n | ./exploded_combos.rb > combos.bash
+
+hadoop>
+
+hadoop jar $HADOOP_STREAMING_JAR -mapper sketch.rb -reducer ./exploded_combos.rb -input input -output combos
+
+2) combo frequencies
+
+bash> 
+
+cat combos.bash | sort | uniq -c | ./filter_over.rb 10 > combo_freq.bash
+
+hadoop>
+
+pairs = load 'combos/*' as (pair:chararray);
+pairs_grouped = group pairs by pair;
+freqs = foreach pairs_grouped { generate group as pair,SIZE(pairs) as size; };
+hi_freqs = filter freqs by size > 9;
+store hi_freqs into 'combo_freqs';
