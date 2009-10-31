@@ -2,7 +2,7 @@
 require 'set'
 
 N_GRAM_LEN = 5
-SKETCH_SIZE = 15
+SKETCH_SIZE = 10
 SKETCH_MAX = (2**61)-1
 SKETCH_SALT = 29764293764
 
@@ -40,7 +40,7 @@ class Array
 end
 
 STDIN.each do |line|
-	line =~ /^(\d*) (.*)/
+	line =~ /^(\d*)\|(.*)/
 	id, text = $1, $2
 	shingles = text.shingles
 	mins = nil

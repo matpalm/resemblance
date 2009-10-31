@@ -92,7 +92,35 @@ def compare_sketch num_bits, sketch_size, cutoff
 	puts run "./compare.rb shingle.result.#{N} #{file} #{MIN_RES}"
 end
 
+def standard_compare description, file
+	puts "---running #{description}"
+	run_unless_file_exists(file) do	
+		run "head -n #{N} name_addr > test.data"
+		time_call do
+			yield file
+		end
+	end
+	puts "#lines= #{`wc -l #{file}`}"
+	puts run "./compare.rb shingle.result.#{N} #{file} #{MIN_RES}"
+end
+
+def compare_sketching_mr_bash
+	file = "sketch.result.mr_bash.#{N}"
+	standard_compare 'sketching mr bash', file do
+		tmp_file = "sketching_mr_bash.tmp"
+		command = "cat test.data | ./hadoop/sketch.rb | "     # sketch
+		command += "sort -n | ./hadoop/exploded_combos.rb | " # combos
+		command += "sort | uniq -c | "                        # combo frequencies
+		command += "./hadoop/filter_over.rb 5 | "             # remove frequencies under 5
+		command += "perl -plne's/^\\s+\\d+ //;' "             # remove freq from line
+		command += "> #{tmp_file}"                
+		run command
+		run "cat test.data | ./determine_jaccard.rb #{tmp_file} > #{file}"
+	end
+end
+
 def compare_erl_sketch 
+	raise 'port to standard compare'
 	puts "---running erl sketch"
 	file = "sketch.result.erl.#{N}"
 	run_unless_file_exists(file) do	
@@ -104,6 +132,7 @@ def compare_erl_sketch
 end
 
 def compare_erl_sketch2
+	raise 'port to standard compare'
 	puts "---running erl sketch"
 	file = "sketch.result.erl.#{N}"
 	run_unless_file_exists(file) do	
@@ -120,6 +149,7 @@ def compare_erl_sketch2
 end
 
 def compare_erl_map_reduce
+	raise 'port to standard compare'
 	puts "---running erl sketch"
 	file = "sketch.result.erl.mr.#{N}"	
 	run_unless_file_exists(file) do	
@@ -135,8 +165,12 @@ def compare_erl_map_reduce
 	puts run "./compare.rb shingle.result.#{N} #{file} #{MIN_RES}"
 end
 
-compare_erl_map_reduce
+def compare_mr_hadoop
+	raise "todo"
+end
 
+compare_sketching_mr_bash
+#compare_erl_map_reduce
 #compare_sketch 64, 10, 2
 #compare_sketch 64, 10, 2
 #compare_erl_sketch2
