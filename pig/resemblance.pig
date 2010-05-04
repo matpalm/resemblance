@@ -1,0 +1,13 @@
+original = load '$input';
+define sketcher `sketch.rb` ship('sketch.rb');
+sketchs = stream original through sketcher as (key:chararray, doc_id:chararray);
+combos_grouped = group sketchs by key;
+non_single_combos = filter combos_grouped by SIZE(sketchs) > 1;
+just_doc_ids = foreach non_single_combos generate group, flatten(sketchs.doc_id);
+define exploded_combos `exploded_combos.rb` ship('exploded_combos.rb');
+pairs = stream just_doc_ids through exploded_combos as (pair:chararray);
+pairs_grouped = group pairs by pair;
+freqs = foreach pairs_grouped { generate group as pair,SIZE(pairs) as size; };
+hi_freqs = filter freqs by size > 5;
+hi_freqs_sorted = order hi_freqs by size;
+store hi_freqs_sorted into '$output';

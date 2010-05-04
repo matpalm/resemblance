@@ -119,6 +119,24 @@ def compare_sketching_mr_bash
 	end
 end
 
+def compare_sketching_hadoop
+	file = "sketch.result.hadoop.#{N}"
+	standard_compare 'sketching hadoop', file do
+		# exploded combos
+		run "rm -rf input combos"
+		run "mkdir input"
+		run "cp test.data input"
+		run "hadoop fs -put input input"
+		run "hadoop fs -rmr combos"
+		run "hadoop jar $HADOOP_STREAMING_JAR -mapper sketch.rb -reducer exploded_combos.rb -input input -output combos -file hadoop/sketch.rb -file hadoop/exploded_combos.rb"
+		# combo freqs
+		run "rm -rf combo_freqs"
+		run "pig -f hadoop/combo_freqs.pig" 
+		run "cat combo_freqs/part-* > combo_freqs.all"
+		run "cat test.data | ./determine_jaccard.rb combo_freqs.all > #{file}"
+	end
+end
+
 def compare_erl_sketch 
 	raise 'port to standard compare'
 	puts "---running erl sketch"
@@ -169,7 +187,9 @@ def compare_mr_hadoop
 	raise "todo"
 end
 
-compare_sketching_mr_bash
+#compare_sketching_mr_bash
+compare_sketching_hadoop
+
 #compare_erl_map_reduce
 #compare_sketch 64, 10, 2
 #compare_sketch 64, 10, 2
