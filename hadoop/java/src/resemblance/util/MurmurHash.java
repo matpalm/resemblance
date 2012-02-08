@@ -19,7 +19,6 @@ package resemblance.util;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.UUID;
 
 /**
  * This is a very fast, non-cryptographic hash suitable for general hash-based

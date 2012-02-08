@@ -1,11 +1,9 @@
-package resemblance.hadoop;
+package resemblance.job;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -21,19 +19,27 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 import resemblance.util.Sketcher;
 
+/**
+ * pass1 of the sketch dedupping
+ * 
+ * input is 
+ *  doc_id \t space seperated text
+ *  
+ * output are the combos of sketch value pairs
+ * needs to be further processed by combo_frequencies.pig
+ */
 
 public class SketchCombos extends Configured implements Tool {
 
-  public static final int SKETCH_SIZE = 10;
-  public static final int SKETCH_SEED = 50;
-  public static final int NGRAM_SHINGLE_LENGTH = 5; 
+  public static final int DFT_SKETCH_SIZE = 50;  // -D sketchSize
+  public static final int DFT_SKETCH_SEED = 50;  // -D sketchSeed
+  public static final int DFT_NGRAM_SIZE = 5;    // -D ngramSize
   
   public static void main(String args[]) throws Exception {
     ToolRunner.run(new SketchCombos(), args);
@@ -52,21 +58,18 @@ public class SketchCombos extends Configured implements Tool {
     conf.setMapOutputValueClass(Text.class);
     conf.setOutputKeyClass(Text.class);
     conf.setOutputValueClass(Text.class);
-    
-//    conf.setMaxMapTaskFailuresPercent(100);
-//    conf.setNumReduceTasks(0);
-    
+        
     conf.setInputFormat(KeyValueTextInputFormat.class);
     conf.setMapperClass(SketchCombosMapper.class);    
     conf.setReducerClass(SketchCombosReducer.class);    
     
     FileInputFormat.addInputPath(conf, new Path(args[0]));
-    FileOutputFormat.setOutputPath(conf, new Path(args[1]));
+    FileOutputFormat.setOutputPath(conf, new Path(args[1]+"/"+System.currentTimeMillis()));
 
-//    conf.set("mapred.output.compress", "true");
-//    conf.set("mapred.output.compression.type", "BLOCK");
+    conf.set("mapred.output.compress", "true");
+    conf.set("mapred.output.compression.type", "BLOCK");
 //    conf.set("mapred.output.compression.codec", "org.apache.hadoop.io.compress.GzipCodec");
-//    conf.setOutputFormat(SequenceFileOutputFormat.class);
+    conf.setOutputFormat(SequenceFileOutputFormat.class);
     
     JobClient.runJob(conf);
 
@@ -74,22 +77,33 @@ public class SketchCombos extends Configured implements Tool {
   }
 
   public static class SketchCombosMapper extends MapReduceBase implements Mapper<Text,Text,IntWritable,Text> {
-    public void map(Text url, Text text, OutputCollector<IntWritable, Text> collector, Reporter reporter) throws IOException {      
-      Sketcher sketcher = new Sketcher(SKETCH_SIZE, SKETCH_SEED);      
-      int[] sketch = sketcher.sketchOf(text.toString(), NGRAM_SHINGLE_LENGTH, Sketcher.TokeniseMode.CHARACTER);
-      IntWritable sketchValue = new IntWritable();
+    
+    private int sketchSize, sketchSeed, ngramSize;
+    
+    public void configure(JobConf job) { 
+      super.configure(job);
+      sketchSize = job.getInt("sketchSize", DFT_SKETCH_SIZE);
+      sketchSeed = job.getInt("sketchSeed", DFT_SKETCH_SEED);
+      ngramSize  = job.getInt("ngramSize",  DFT_NGRAM_SIZE);
+    }
+        
+    public void map(Text key, Text text, OutputCollector<IntWritable, Text> collector, Reporter reporter) throws IOException {      
+      Sketcher sketcher = new Sketcher(sketchSize, sketchSeed);      
+      int[] sketch = sketcher.sketchOf(text.toString(), ngramSize, Sketcher.TokeniseMode.TERM);
       for(int s : sketch) {
-        sketchValue.set(s);
-        collector.collect(sketchValue, url);
+        collector.collect(new IntWritable(s), key);
       }
-    }    
+    }
+    
   }
 
   public static class SketchCombosReducer extends MapReduceBase implements Reducer<IntWritable,Text,Text,Text> {
-    public void reduce(IntWritable key, Iterator<Text> urls, OutputCollector<Text, Text> output, Reporter reporter) throws IOException {
+    public void reduce(IntWritable key, Iterator<Text> keys, OutputCollector<Text, Text> output, Reporter reporter) throws IOException {
       List<String> seenSoFar = new ArrayList<String>();
-      while(urls.hasNext()) {
-        String next = urls.next().toString();
+      
+      // warning this algorithm is quadratic in the most frequent sketch value..
+      while(keys.hasNext()) {
+        String next = keys.next().toString();
         for(String seen : seenSoFar) {
           if (next.compareTo(seen) < 0) {
             output.collect(new Text(next), new Text(seen));

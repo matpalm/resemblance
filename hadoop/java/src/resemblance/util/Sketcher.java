@@ -40,7 +40,7 @@ public class Sketcher {
     return sketch;
   }
     
-  public Set<String> characterShinglesOf(String str, int shingleLength) {
+  private Set<String> characterShinglesOf(String str, int shingleLength) {
     Set<String> shingles = new HashSet<String>();    
     if (str.length() < shingleLength)
       return shingles;
@@ -51,7 +51,7 @@ public class Sketcher {
     return shingles;
   }    
 
-  public Set<String> termShinglesOf(String str, int shingleLength) {
+  private Set<String> termShinglesOf(String str, int shingleLength) {
     Set<String> shingles = new HashSet<String>();
     
     String[] tokens = str.split(" ");    

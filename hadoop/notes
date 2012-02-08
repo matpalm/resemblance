@@ -36,7 +36,6 @@ sketch value 12 is in d1 and d2
 sketch value 18 is in d1 and d3
 sketch value 23 is in d1 and d2
 
-so 
 d1 and d2 have 2 in common
 d1 and d3 have 1 in common
 d2 and d3 have 1 in common
@@ -46,13 +45,45 @@ approximates the jaccard coeffecient. (complex maths explaining this here) and w
  n^2 in the number of documents by instead falling back to n^2 in the most frequently
 used sketch value. TALK ABOUT how the max number in common should be << #docs
 
+
+experiments on the common crawl data
+
+data is
+url1 <tab> stanford tokenised version of page goes here
+url2 <tab> stanford tokenised version of page goes here
+
+0) remove exact dups; these are easy to identify and cause grief for the sketching algo
+
+remove exact dups to make two datasets
+
+ url1 <tab> exact dup of text
+
+ utr1 <tab> dup_url2 dup_url2 dup_url3 ...
+
+bash>
+
+cat input/test.data.raw | sort -k2 | ./extract_exact_dups.rb
+
+two files are outputted; unique_entries & dups
+
+pig>
+
+ pages = load 'input' as (url:chararray, text:chararray);
+ grped_by_text = group pages by text;
+ text_to_urls = foreach grped_by_text { generate group as text, pages.url as urls; }
+ TTTOOOOODDDDOOOO
+  
+text, (url1,url2,url2)
+
+1) sketch
+
 bash>
 
 cat input/test.data.orig | ./sketch.rb | sort -n | ./exploded_combos.rb > combos.bash
 
 hadoop>
 
-hadoop jar $HADOOP_STREAMING_JAR -mapper sketch.rb -reducer ./exploded_combos.rb -input input -output combos
+hadoop -jar resemblance.jar resemblance.job.SketchCombos input exploded_combos
 
 2) combo frequencies
 
@@ -60,10 +91,11 @@ bash>
 
 cat combos.bash | sort | uniq -c | ./filter_over.rb 10 > combo_freq.bash
 
-hadoop>
+hadoop> 
 
-pairs = load 'combos/*' as (pair:chararray);
-pairs_grouped = group pairs by pair;
-freqs = foreach pairs_grouped { generate group as pair,SIZE(pairs) as size; };
+-- pig
+pairs = load 'exploded_combos' as (d1:chararray, d2:chararray);
+grped = group pairs by (d1, d2);
+freqs = foreach grped { generate flatten(group) as pair, SIZE(pairs) as freq; };
 hi_freqs = filter freqs by size > 9;
 store hi_freqs into 'combo_freqs';
