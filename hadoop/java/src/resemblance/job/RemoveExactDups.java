@@ -43,7 +43,7 @@ public class RemoveExactDups extends Configured implements Tool {
     conf.setJobName(getClass().getName());
     
     conf.setMapOutputKeyClass(Text.class);
-    conf.setMapOutputValueClass(Text.class);
+    conf.setMapOutputValueClass(StringPair.class);
     conf.setOutputKeyClass(Text.class);
     conf.setOutputValueClass(Text.class);
         
@@ -64,9 +64,9 @@ public class RemoveExactDups extends Configured implements Tool {
     return 0;
   }  
  
-   public static class RemoveExactDupsMapper extends MapReduceBase implements Mapper<Text,Text,Text,Text> {
+   public static class RemoveExactDupsMapper extends MapReduceBase implements Mapper<Text,Text,Text,StringPair> {
      
-     public void map(Text key, Text text, OutputCollector<Text, Text> collector, Reporter reporter) throws IOException {
+     public void map(Text key, Text text, OutputCollector<Text, StringPair> collector, Reporter reporter) throws IOException {
        
       try {
         MessageDigest md = MessageDigest.getInstance("MD5");
@@ -81,7 +81,7 @@ public class RemoveExactDups extends Configured implements Tool {
 //        System.out.println("foo! "+sb.toString()+" ["+text.toString()+"]");
         
         // assume no tabs in key or text
-        collector.collect(new Text(digest), new Text(key.toString()+"\t"+text.toString()));
+        collector.collect(new Text(digest), new StringPair(key, text));
         
       } catch (NoSuchAlgorithmException e) {
         throw new IOException("no md5 digest?");
@@ -91,15 +91,12 @@ public class RemoveExactDups extends Configured implements Tool {
      
    }
    
-   public static class RemoveExactDupsReducer extends MapReduceBase implements Reducer<Text,Text,Text,Text> {
+   public static class RemoveExactDupsReducer extends MapReduceBase implements Reducer<Text,StringPair,Text,Text> {
      
-     public void reduce(Text textMD5, Iterator<Text> keyAndTexts, OutputCollector<Text, Text> output, Reporter reporter) throws IOException {
+     public void reduce(Text textMD5, Iterator<StringPair> keyAndTexts, OutputCollector<Text, Text> output, Reporter reporter) throws IOException {
        // just assume first is canonical example, actually don't care about the key...
-       Text canonicalExample = keyAndTexts.next();
-       String[] keyAndText = canonicalExample.toString().split("\t");
-       String key = keyAndText[0];
-       String text = keyAndText[1];
-       output.collect(new Text(key), new Text(text));
+       StringPair canonicalExample = keyAndTexts.next();
+       output.collect(new Text(canonicalExample.key), new Text(canonicalExample.text));
        
        // report number of dups
        int others = 0;
@@ -114,31 +111,35 @@ public class RemoveExactDups extends Configured implements Tool {
      
    }
    
-//   public static class StringPair implements Writable {
-//
-//     private String key, text;
-//     
-//     public StringPair(String key, String text) {
-//       this.key = key;
-//       this.text = text;
-//     }
-//     
-//     public void write(DataOutput out) throws IOException {
-//       out.writeUTF(key);
-//       out.writeUTF(text);
-//     }
-//     
-//     public void readFields(DataInput in) throws IOException {
-//       key = in.readUTF();
-//       text = in.readUTF();
-//     }
-//     
-//     public static StringPair read(DataInput in) throws IOException {
-//       StringPair w = new StringPair(null, null);
-//       w.readFields(in);
-//       return w;
-//     }
-//     
-//   }   
+   public static class StringPair implements Writable {
+
+     private Text key, text;
+     
+     public StringPair() {
+       this(new Text(), new Text());      
+     }
+     
+     public StringPair(Text key, Text text) {
+       this.key = key;
+       this.text = text;
+     }
+     
+     public void write(DataOutput out) throws IOException {
+       key.write(out);
+       text.write(out);
+     }
+     
+     public void readFields(DataInput in) throws IOException {
+       key.readFields(in);
+       text.readFields(in);
+     }
+     
+     public static StringPair read(DataInput in) throws IOException {
+       StringPair w = new StringPair();
+       w.readFields(in);
+       return w;
+     }
+     
+   }   
    
 }
