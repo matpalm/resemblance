@@ -79,7 +79,7 @@ compare simhash to brute force order n squared compare all (considering only val
 <pre>
 > cat test.data | ./ruby/shingle.rb coeff 0.5 | sort -nr -k3 > shingling.result
 > cat test.data | ./ruby/simhash.rb | sort -nr -k3 > simhash.result
-> ./compare.rb 0.5 shingle.result simhash.result
+> ./compare.rb shingling.result simhash.result 0.5
 </pre>
 
 h1. sketching heuristic
@@ -90,7 +90,7 @@ use 64bit hash, calculate 10 shingles and cutoff at MAX/2
 <pre>
 > cat test.data | ./ruby/shingle.rb coeff 0.5 | sort -nr -k3 > shingling.result
 > cat test.data | ./ruby/sketch.rb 64 10 2 | sort -nr -k3 > sketch.result
-> ./compare.rb 0.5 shingle.result simhash.result
+> ./compare.rb shingling.result sketch.result 0.5
 </pre>
 
 h1. sketching in erlang
