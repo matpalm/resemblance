@@ -9,7 +9,7 @@
 #
 # and a results file
 #  1 2 0.4
-#  2 4 0.6 
+#  2 4 0.6
 #
 # and output
 #  0.4
@@ -20,8 +20,8 @@
 #   van
 
 raise "usage: head -n 500 phrases | ./examine_result.rb some_resemblance_measure.result.500" unless ARGV.size == 1
-
-require 'ruby/read_data'
+$: << File.join(File.dirname(__FILE__), 'ruby')
+require 'read_data'
 data = read_data STDIN
 
 File.open(ARGV.first).each do |line|
